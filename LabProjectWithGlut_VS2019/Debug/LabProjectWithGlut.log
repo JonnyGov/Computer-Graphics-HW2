@@ -1,5 +1,5 @@
 ﻿  main.c
-C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(481,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(483,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(798,2): warning C4996: 'vsprintf': This function or variable may be unsafe. Consider using vsprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(485,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(800,2): warning C4996: 'vsprintf': This function or variable may be unsafe. Consider using vsprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   LabProjectWithGlut.vcxproj -> C:\Users\ooffe\Source\Repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
