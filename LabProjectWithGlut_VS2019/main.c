@@ -60,7 +60,7 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3]);
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n);
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
 //
-void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat r, GLfloat g, GLfloat b);
 
 GLMmodel *model_ptr;
 void ClearColorBuffer();
@@ -131,7 +131,7 @@ void ModelProcessing()
 			far=CAMERA_DISTANCE_FROM_AXIS_CENTER+1, //11
 			near =CAMERA_DISTANCE_FROM_AXIS_CENTER-1;//9
 	//vars for view port
-	GLfloat vpW = 500, vpH = 500 ,cx = 0, cy=0;
+	GLfloat vpW = WIN_SIZE, vpH = WIN_SIZE ,cx = 0, cy=0;
 	//temps
 	GLfloat tempMult[16], tempAns[16] , temp3Mult[3],temp3Ans[3];
 	//vars for lookat transformation
@@ -220,32 +220,32 @@ void ModelProcessing()
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mprojection);
 	if (GlobalGuiParamsForYou.ProjectionType == ORTHOGRAPHIC) {
-		Mprojection[0] = 2 / (right - left);
-		Mprojection[5] = 2 / (top - bottom);
-		Mprojection[10] = (-2 / (far - near));
+		Mprojection[0] = 2.0 / (right - left);
+		Mprojection[5] = 2.0 / (top - bottom);
+		Mprojection[10] = (-2.0 / (far - near));
 		Mprojection[12] = (-(right + left) / (right - left));
 		Mprojection[13] = (-(top + bottom) / (top - bottom));
 		Mprojection[14] = (-(near + far) / (far - near));
 	}
 	else {
-		Mprojection[0] = 2*(near) / (right - left);
-		Mprojection[5] = 2 * near / (top - bottom);
+		Mprojection[0] = 2.0*(near) / (right - left);
+		Mprojection[5] = 2.0 * near / (top - bottom);
 		Mprojection[8] = (right+left) / (right - left);
 		Mprojection[9] = top+bottom / (top - bottom);
 		Mprojection[10] = -(far + near) / (far - near);
-		Mprojection[11] = -1;
-		Mprojection[14] = -(2*far*near) / (far - near);
+		Mprojection[11] = -1.0;
+		Mprojection[14] = -(2.0*far*near) / (far - near);
 	}
 
 	// ex2-2: calculating viewport transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mviewport);
-	Mviewport[0] = vpW/2;
-	Mviewport[5] = vpH/ 2;
-	Mviewport[10] = 1 / 2;
-	Mviewport[12] = cx+ (vpW/2);
-	Mviewport[13] = cy + (vpH / 2);
-	Mviewport[14] = 1 / 2;
+	Mviewport[0] = vpW/2.0;
+	Mviewport[5] = vpH/ 2.0;
+	Mviewport[10] = 1.0 / 2.0;
+	Mviewport[12] = cx+ (vpW/2.0);
+	Mviewport[13] = cy + (vpH / 2.0);
+	Mviewport[14] = 1.0 / 2.0;
 
 
 
@@ -354,12 +354,12 @@ void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloa
 {
 	//ex2.1: implement Bresenham line drawing algorithm
 	//////////////////////////////////////////////////////////////////////////////////
-	DrawLineDDA(x1, y1, x2, y2);
-	setPixel(x1, y1, 1, 1, 1);
-	setPixel(x2, y2, 1, 1, 1);
+	DrawLineDDA(x1, y1, x2, y2,r,g,b);
+	setPixel(x1, y1, r, g, b);
+	setPixel(x2, y2, r, g, b);
 }
 // the 
-void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,  GLfloat r, GLfloat g, GLfloat b)
 {
 	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
 
@@ -383,7 +383,7 @@ void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 		a = dy / dx;
 		y = y1_;
 		for (x = x1_; x < x2_; x++) {
-			setPixel(x, round(y), 1, 1, 1);
+			setPixel(x, round(y), r, g, b);
 			y = y + a;
 		}
 	}
@@ -391,7 +391,7 @@ void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 		a = dx / dy;
 		x = x1_;
 		for (y = y1_; y < y2_; y++) {
-			setPixel(round(x), y, 1, 1, 1);
+			setPixel(round(x), y, r, g, b);
 			x = x + a;
 		}
 	}
