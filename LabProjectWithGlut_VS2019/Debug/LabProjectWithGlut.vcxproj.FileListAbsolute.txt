@@ -1,0 +1,2 @@
+C:\Users\ooffe\Desktop\project\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
+C:\Users\ooffe\Desktop\project\LabProjectWithGlut_VS2019\Debug\ExecutableFile.pdb
