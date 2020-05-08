@@ -129,9 +129,7 @@ void ModelProcessing()
 	// ex2-3-extra: calculating model scaling and translating transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mmodeling);
-	Mmodeling[0] = GlobalGuiParamsForYou.ModelScale;
-	Mmodeling[5] = GlobalGuiParamsForYou.ModelScale;
-	Mmodeling[10] = GlobalGuiParamsForYou.ModelScale;
+
 
 
 	// ex2-3: calculating translate transformation matrix
@@ -143,7 +141,9 @@ void ModelProcessing()
 
 	// ex2-3: calculating scale transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
-	
+	Mmodeling[0] = GlobalGuiParamsForYou.ModelScale;
+	Mmodeling[5] = GlobalGuiParamsForYou.ModelScale;
+	Mmodeling[10] = GlobalGuiParamsForYou.ModelScale;
 
 
 	// ex2-4: calculating lookat transformation matrix
