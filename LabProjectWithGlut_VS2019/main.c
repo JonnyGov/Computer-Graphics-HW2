@@ -1,9 +1,3 @@
-/*
-Ofeck Shchar - <name in hew>
-Yonathan Gov - <name in hew>
-*/
-
-
 //  
 // Created by Ran Dror on April 2018
 // Copyright (c) Ran Dror. All right reserved.
@@ -127,34 +121,92 @@ GLfloat Mviewport[16];
 
 void ModelProcessing()
 {
+	// temp added : 
+	GLfloat r=1.0, l=-1.0, t=1.0, b=-1.0, n= CAMERA_DISTANCE_FROM_AXIS_CENTER+1.0,f= CAMERA_DISTANCE_FROM_AXIS_CENTER-1.0;
+	GLfloat  tempVector[3],wVector[3], uVector[3], vVector[3], center[3] = { 0,0,0 }, up[3] = { 0,1,0 };
+	// end temp added.
 
 	// ex2-3-extra: calculating model scaling and translating transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
+	M4x4identity(Mmodeling);
+
 
 
 	// ex2-3: calculating translate transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
+	Mmodeling[12] = GlobalGuiParamsForYou.ModelTranslateVector[0];
+	Mmodeling[13] = GlobalGuiParamsForYou.ModelTranslateVector[1];
+	Mmodeling[14] = GlobalGuiParamsForYou.ModelTranslateVector[2];
 
 
 	// ex2-3: calculating scale transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
-	M4x4identity(Mmodeling);
+	Mmodeling[0] = GlobalGuiParamsForYou.ModelScale;
+	Mmodeling[5] = GlobalGuiParamsForYou.ModelScale;
+	Mmodeling[10] = GlobalGuiParamsForYou.ModelScale;
 
 
 	// ex2-4: calculating lookat transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mlookat);
+	Vminus(wVector, GlobalGuiParamsForYou.CameraPos, center, 3); // camera - center
+	MatrixCopy(tempVector, wVector, 3);
+	VscalarMultiply(wVector, wVector, 1.0 / V3Normalize(tempVector), 3); // W = camera - center / | camera - center|
+	V3cross(uVector, up, wVector); // up x W
+	MatrixCopy(tempVector, uVector, 3);
+	VscalarMultiply(uVector, uVector, 1.0 / V3Normalize(tempVector), 3); // U = up x W / | up x W |
+	V3cross(vVector, wVector, uVector); // V= W x U
+	Mlookat[2] = wVector[0]; //Wx
+	Mlookat[0] = uVector[0]; //Ux
+	Mlookat[1] = vVector[0]; //Vx
+
+	Mlookat[6] = wVector[1]; //Wy
+	Mlookat[4] = uVector[1]; //Uy
+	Mlookat[5] = vVector[1]; //Vy
+
+	Mlookat[10] = wVector[2]; //Wz
+	Mlookat[8] = uVector[2];  //Uz
+	Mlookat[9] = vVector[2];  //Vz
+
+	Mlookat[12] = -GlobalGuiParamsForYou.CameraPos[0] * Mlookat[0] - GlobalGuiParamsForYou.CameraPos[1] * Mlookat[4] - GlobalGuiParamsForYou.CameraPos[2] * Mlookat[8];
+	Mlookat[13] = -GlobalGuiParamsForYou.CameraPos[0] * Mlookat[1] - GlobalGuiParamsForYou.CameraPos[1] * Mlookat[5] - GlobalGuiParamsForYou.CameraPos[2] * Mlookat[9];
+	Mlookat[14] = -GlobalGuiParamsForYou.CameraPos[0] * Mlookat[2] - GlobalGuiParamsForYou.CameraPos[1] * Mlookat[6] - GlobalGuiParamsForYou.CameraPos[2] * Mlookat[10];
 
 
 	// ex2-2: calculating Orthographic or Perspective projection transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mprojection);
+	if (GlobalGuiParamsForYou.ProjectionType == ORTHOGRAPHIC) { // if the projection is Orthographic.
 
+		Mprojection[0] = (GLfloat)2 / (r - l);
+		Mprojection[5] = (GLfloat)2 / (t - b);
+		Mprojection[10] = (GLfloat)-2 / (f - n);
+		Mprojection[12] = (-r - l) / (r - l);
+		Mprojection[13] = (-t - b) / (t - b);
+		Mprojection[14] = (-f - n) / (f - n);
+		Mprojection[15] = (GLfloat)1;
+	}
+	else { // if the projection is Perspective.
+		Mprojection[0] = (((GLfloat)2.0) * n) / (r - l);
+		Mprojection[5] = (((GLfloat)2.0) * n) / (t - b);
+		Mprojection[8] = (r + l) / (r - l);
+		Mprojection[9] = (t + b) / (t - b);
+		Mprojection[10] = (-f - n) / (f - n);
+		Mprojection[11] = ((GLfloat)(-1.0));
+		Mprojection[14] = ((((GLfloat)-2.0) * f * n) / (f - n));
+		Mprojection[15] = 0.0;
+	}
 
 	// ex2-2: calculating viewport transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mviewport);
-
+	Mviewport[0] = WIN_SIZE / 2.0;
+	Mviewport[5] = WIN_SIZE / 2.0;
+	Mviewport[10] = 0.5;
+	Mviewport[12] = WIN_SIZE / 2.0;
+	Mviewport[13] = WIN_SIZE / 2.0;
+	Mviewport[14] = 0.5;
+	Mviewport[15] = 1.0;
 
 	// ex3: clearing color and Z-buffer
 	//////////////////////////////////////////////////////////////////////////////////
@@ -170,20 +222,23 @@ void VertexProcessing(Vertex *v)
 	GLfloat temp1[4], temp2[4];
 	GLfloat point3D_plusNormal_screen[4];
 	GLfloat Mmodeling3x3[9], Mlookat3x3[9];
-
+	//temp added :
+	GLfloat tempMatrix[16];
+	//end temp added!
 	// ex2-3: modeling transformation v->point3D --> point3DafterModelingTrans
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(point3DafterModelingTrans, v->point3D, 4);
+	M4multiplyV4(point3DafterModelingTrans, Mmodeling, v->point3D);
 
 
 	// ex2-4: lookat transformation point3DafterModelingTrans --> v->point3DeyeCoordinates
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(v->point3DeyeCoordinates, point3DafterModelingTrans, 4);
+	M4multiplyV4(v->point3DeyeCoordinates, Mlookat, point3DafterModelingTrans);
 
 
 	// ex2-2: transformation from eye coordinates to screen coordinates v->point3DeyeCoordinates --> v->pointScreen
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(v->pointScreen, v->point3DeyeCoordinates, 4);
+	M4multiplyM4(tempMatrix, Mviewport, Mprojection);
+	M4multiplyV4(v->pointScreen, tempMatrix, v->point3DeyeCoordinates);
 
 
 	// ex2-5: transformation normal from object coordinates to eye coordinates v->normal --> v->NormalEyeCoordinates
@@ -225,6 +280,7 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 
 	if (GlobalGuiParamsForYou.DisplayType == FACE_VERTEXES)
 	{
+
 		DrawLineBresenham(round(v1->pointScreen[0]), round(v1->pointScreen[1]), round(v2->pointScreen[0]), round(v2->pointScreen[1]), 1, 1, 1);
 		DrawLineBresenham(round(v2->pointScreen[0]), round(v2->pointScreen[1]), round(v3->pointScreen[0]), round(v3->pointScreen[1]), 1, 1, 1);
 		DrawLineBresenham(round(v3->pointScreen[0]), round(v3->pointScreen[1]), round(v1->pointScreen[0]), round(v1->pointScreen[1]), 1, 1, 1);
@@ -240,14 +296,51 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	}
 }
 
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
+{
+	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
 
+	if ((y2 - y1) > -(x2 - x1)) {
+		x1_ = x1;
+		y1_ = y1;
+		x2_ = x2;
+		y2_ = y2;
+	}
+	else
+	{
+		x1_ = x2;
+		y1_ = y2;
+		x2_ = x1;
+		y2_ = y1;
+	}
+
+	dx = x2_ - x1_;
+	dy = y2_ - y1_;
+	if (fabs(dx) > fabs(dy)) {
+		a = dy / dx;
+		y = y1_;
+		for (x = x1_; x < x2_; x++) {
+			setPixel(x, round(y), r, g, b);
+			y = y + a;
+		}
+	}
+	else {
+		a = dx / dy;
+		x = x1_;
+		for (y = y1_; y < y2_; y++) {
+			setPixel(round(x), y, r, g, b);
+			x = x + a;
+		}
+	}
+}
 
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b)
 {
 	//ex2.1: implement Bresenham line drawing algorithm
+	DrawLineDDA(x1, y1, x2, y2,r,g,b);
 	//////////////////////////////////////////////////////////////////////////////////
-	setPixel(x1, y1, 1, 1, 1);
-	setPixel(x2, y2, 1, 1, 1);
+	setPixel(x1, y1, r, g, b);
+	setPixel(x2, y2, r, g, b);
 }
 
 
