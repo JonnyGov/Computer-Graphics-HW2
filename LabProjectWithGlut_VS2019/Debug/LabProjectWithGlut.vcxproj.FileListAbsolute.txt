@@ -1,0 +1,2 @@
+C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
+C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.pdb

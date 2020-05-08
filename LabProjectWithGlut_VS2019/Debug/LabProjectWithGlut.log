@@ -1,0 +1,5 @@
+﻿  main.c
+C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\main.c(525,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\main.c(527,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\main.c(842,2): warning C4996: 'vsprintf': This function or variable may be unsafe. Consider using vsprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  LabProjectWithGlut.vcxproj -> C:\Users\Yonathan\Google Drive\Studying\Studys Y3-Y4\Y-3\Semester 2\Computer Graphics\HW\2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe

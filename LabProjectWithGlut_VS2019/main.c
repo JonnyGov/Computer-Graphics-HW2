@@ -1,9 +1,3 @@
-/*
-Ofeck Shchar - <name in hew>
-Yonathan Gov - <name in hew>
-*/
-
-
 //  
 // Created by Ran Dror on April 2018
 // Copyright (c) Ran Dror. All right reserved.
@@ -65,7 +59,8 @@ void VertexProcessing(Vertex *v);
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3]);
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n);
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
-
+//
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
 
 GLMmodel *model_ptr;
 void ClearColorBuffer();
@@ -124,36 +119,140 @@ GLfloat Mmodeling[16];
 GLfloat Mlookat[16];
 GLfloat Mprojection[16];
 GLfloat Mviewport[16];
-
+// all transphrmations before drawings
 void ModelProcessing()
-{
+{	//my vars
 
+	// vars for  projection transformation 
+	GLfloat right=1,
+			left=-1,
+			top=1,
+			bottom=-1,
+			far=CAMERA_DISTANCE_FROM_AXIS_CENTER+1, //11
+			near =CAMERA_DISTANCE_FROM_AXIS_CENTER-1;//9
+	//vars for view port
+	GLfloat vpW = 500, vpH = 500 ,cx = 0, cy=0;
+	//temps
+	GLfloat tempMult[16], tempAns[16] , temp3Mult[3],temp3Ans[3];
+	//vars for lookat transformation
+	GLfloat vectorW[3], vectorU[3], vectorV[3] ,center[3],up[3];
+	center[0] = 0; // looking at (0,0,0)
+	center[1] = 0;
+	center[2] = 0;
+	up[0] = 0; // up
+	up[1] = 1;
+	up[2] = 0;
+
+
+
+
+	// in to struct
+	GlobalGuiParamsForYou.ModelMinVec[0] = left; 	GlobalGuiParamsForYou.ModelMinVec[1] = bottom; GlobalGuiParamsForYou.ModelMinVec[2] = near;	// ModelMinVec[3]; //(left, bottom, near) of a model.
+	GlobalGuiParamsForYou.ModelMaxVec[0] = right;	GlobalGuiParamsForYou.ModelMaxVec[1] = top;		GlobalGuiParamsForYou.ModelMaxVec[2] = far;	// ModelMaxVec[3]; //(right, top, far) of a model.
+
+
+	// prep for ex2 -3
+	M4x4identity(Mmodeling);
 	// ex2-3-extra: calculating model scaling and translating transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
-
+	
 
 	// ex2-3: calculating translate transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
-
-
+	M4x4identity(tempMult);
+	tempMult[12] = GlobalGuiParamsForYou.ModelTranslateVector[0];
+	tempMult[13] = GlobalGuiParamsForYou.ModelTranslateVector[1];
+	tempMult[14] = GlobalGuiParamsForYou.ModelTranslateVector[2];
+	M4multiplyM4(tempAns, tempMult, Mmodeling);
+	MatrixCopy(Mmodeling, tempAns, 16);
 	// ex2-3: calculating scale transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
-	M4x4identity(Mmodeling);
 
+	M4x4identity(tempMult);
+	tempMult[0] =  GlobalGuiParamsForYou.ModelScale;
+	tempMult[5] =  GlobalGuiParamsForYou.ModelScale;
+	tempMult[10] =  GlobalGuiParamsForYou.ModelScale;
 
+	M4multiplyM4(tempAns, tempMult, Mmodeling);
+	MatrixCopy(Mmodeling, tempAns, 16);
 	// ex2-4: calculating lookat transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mlookat);
+
+	//w
+	Vminus(temp3Ans,GlobalGuiParamsForYou.CameraPos,center,3);
+
+	temp3Mult[0] = temp3Ans[0];
+	temp3Mult[1] = temp3Ans[1];
+	temp3Mult[2] = temp3Ans[2];
+
+	VscalarMultiply(vectorW,temp3Ans, 1/(V3Normalize(temp3Mult)),3);
+	//u
+	V3cross(temp3Ans,up,vectorW);
+	temp3Mult[0] = temp3Ans[0];
+	temp3Mult[1] = temp3Ans[1];
+	temp3Mult[2] = temp3Ans[2];
+	VscalarMultiply(vectorU, temp3Ans, 1 / (V3Normalize(temp3Mult)), 3);
+	//v
+	V3cross(vectorV, vectorW, vectorU);
+
+	//final matrixes
+	M4x4identity(tempAns);
+		tempAns[0] = vectorU[0]; //Ux
+		tempAns[1] = vectorV[0]; //Vx
+		tempAns[2] = vectorW[0]; //Wx
+		tempAns[4] = vectorU[1];//Uy
+		tempAns[5] = vectorV[1]; //Vy
+		tempAns[6] = vectorW[1]; //Wy
+		tempAns[8] = vectorU[2];//Uz
+		tempAns[9] = vectorV[2]; //Vz
+		tempAns[10]= vectorW[2]; //Wz
+	M4x4identity(tempMult);
+		tempMult[12] = (-GlobalGuiParamsForYou.CameraPos[0]);
+		tempMult[13] = (-GlobalGuiParamsForYou.CameraPos[1]);
+		tempMult[14] = (-GlobalGuiParamsForYou.CameraPos[2]);
+
+	M4multiplyM4(Mlookat,tempAns,tempMult);
+
 
 
 	// ex2-2: calculating Orthographic or Perspective projection transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mprojection);
-
+	if (GlobalGuiParamsForYou.ProjectionType == ORTHOGRAPHIC) {
+		Mprojection[0] = 2 / (right - left);
+		Mprojection[5] = 2 / (top - bottom);
+		Mprojection[10] = (-2 / (far - near));
+		Mprojection[12] = (-(right + left) / (right - left));
+		Mprojection[13] = (-(top + bottom) / (top - bottom));
+		Mprojection[14] = (-(near + far) / (far - near));
+	}
+	else {
+		Mprojection[0] = 2*(near) / (right - left);
+		Mprojection[5] = 2 * near / (top - bottom);
+		Mprojection[8] = (right+left) / (right - left);
+		Mprojection[9] = top+bottom / (top - bottom);
+		Mprojection[10] = -(far + near) / (far - near);
+		Mprojection[11] = -1;
+		Mprojection[14] = -(2*far*near) / (far - near);
+	}
 
 	// ex2-2: calculating viewport transformation matrix
 	//////////////////////////////////////////////////////////////////////////////////
 	M4x4identity(Mviewport);
+	Mviewport[0] = vpW/2;
+	Mviewport[5] = vpH/ 2;
+	Mviewport[10] = 1 / 2;
+	Mviewport[12] = cx+ (vpW/2);
+	Mviewport[13] = cy + (vpH / 2);
+	Mviewport[14] = 1 / 2;
+
+
+
+
+
+
+
 
 
 	// ex3: clearing color and Z-buffer
@@ -163,7 +262,7 @@ void ModelProcessing()
 
 }
 
-
+// transphormations on vectors?
 void VertexProcessing(Vertex *v)
 {
 	GLfloat point3DafterModelingTrans[4];
@@ -173,17 +272,26 @@ void VertexProcessing(Vertex *v)
 
 	// ex2-3: modeling transformation v->point3D --> point3DafterModelingTrans
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(point3DafterModelingTrans, v->point3D, 4);
+	//MatrixCopy(point3DafterModelingTrans, v->point3D, 4);
+	M4multiplyV4(point3DafterModelingTrans, Mmodeling, v->point3D);
+
 
 
 	// ex2-4: lookat transformation point3DafterModelingTrans --> v->point3DeyeCoordinates
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(v->point3DeyeCoordinates, point3DafterModelingTrans, 4);
+	//MatrixCopy(v->point3DeyeCoordinates, point3DafterModelingTrans, 4);
+	M4multiplyV4(v->point3DeyeCoordinates, Mlookat, point3DafterModelingTrans);
+
 
 
 	// ex2-2: transformation from eye coordinates to screen coordinates v->point3DeyeCoordinates --> v->pointScreen
 	//////////////////////////////////////////////////////////////////////////////////
-	MatrixCopy(v->pointScreen, v->point3DeyeCoordinates, 4);
+	//MatrixCopy(v->pointScreen, v->point3DeyeCoordinates, 4);
+	M4multiplyV4(v->pointScreen, Mprojection, v->point3DeyeCoordinates);
+	M4multiplyV4(temp1, Mviewport, v->pointScreen);
+	MatrixCopy(v->pointScreen, temp1, 4);
+
+
 
 
 	// ex2-5: transformation normal from object coordinates to eye coordinates v->normal --> v->NormalEyeCoordinates
@@ -246,11 +354,48 @@ void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloa
 {
 	//ex2.1: implement Bresenham line drawing algorithm
 	//////////////////////////////////////////////////////////////////////////////////
+	DrawLineDDA(x1, y1, x2, y2);
 	setPixel(x1, y1, 1, 1, 1);
 	setPixel(x2, y2, 1, 1, 1);
 }
+// the 
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+{
+	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
 
+	if ((y2 - y1) > -(x2 - x1)) {
+		x1_ = x1;
+		y1_ = y1;
+		x2_ = x2;
+		y2_ = y2;
+	}
+	else
+	{
+		x1_ = x2;
+		y1_ = y2;
+		x2_ = x1;
+		y2_ = y1;
+	}
 
+	dx = x2_ - x1_;
+	dy = y2_ - y1_;
+	if (fabs(dx) > fabs(dy)) {
+		a = dy / dx;
+		y = y1_;
+		for (x = x1_; x < x2_; x++) {
+			setPixel(x, round(y), 1, 1, 1);
+			y = y + a;
+		}
+	}
+	else {
+		a = dx / dy;
+		x = x1_;
+		for (y = y1_; y < y2_; y++) {
+			setPixel(round(x), y, 1, 1, 1);
+			x = x + a;
+		}
+	}
+}
 
 
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n)
