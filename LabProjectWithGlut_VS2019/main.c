@@ -304,7 +304,7 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	}
 }
 
-void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
 {
 	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
 
@@ -328,7 +328,7 @@ void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 		a = dy / dx;
 		y = y1_;
 		for (x = x1_; x < x2_; x++) {
-			setPixel(x, round(y), 1, 1, 1);
+			setPixel(x, round(y), r, g, b);
 			y = y + a;
 		}
 	}
@@ -336,7 +336,7 @@ void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 		a = dx / dy;
 		x = x1_;
 		for (y = y1_; y < y2_; y++) {
-			setPixel(round(x), y, 1, 1, 1);
+			setPixel(round(x), y, r, g, b);
 			x = x + a;
 		}
 	}
@@ -345,10 +345,10 @@ void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b)
 {
 	//ex2.1: implement Bresenham line drawing algorithm
-	DrawLineDDA(x1, y1, x2, y2);
+	DrawLineDDA(x1, y1, x2, y2,r,g,b);
 	//////////////////////////////////////////////////////////////////////////////////
-	setPixel(x1, y1, 1, 1, 1);
-	setPixel(x2, y2, 1, 1, 1);
+	setPixel(x1, y1, r, g, b);
+	setPixel(x2, y2, r, g, b);
 }
 
 
