@@ -2,3 +2,5 @@ C:\Users\ooffe\Desktop\project\LabProjectWithGlut_VS2019\Debug\ExecutableFile.ex
 C:\Users\ooffe\Desktop\project\LabProjectWithGlut_VS2019\Debug\ExecutableFile.pdb
 C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
 C:\Users\ooffe\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.pdb
+C:\Users\Yonathan\Source\Repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
+C:\Users\Yonathan\Source\Repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.pdb

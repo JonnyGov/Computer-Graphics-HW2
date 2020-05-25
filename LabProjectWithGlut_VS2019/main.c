@@ -213,8 +213,15 @@ void ModelProcessing()
 
 	// ex3: clearing color and Z-buffer
 	//////////////////////////////////////////////////////////////////////////////////
+
 	ClearColorBuffer(); // setting color buffer to background color
+
 	//add here clearing z-buffer
+	for (int i = 0; i < WIN_SIZE; i++) {
+		for (int j = 0; j < WIN_SIZE; j++) {
+			Zbuffer[i][j] = 1;
+		}
+	}
 
 }
 
@@ -271,12 +278,134 @@ void VertexProcessing(Vertex *v)
 	//////////////////////////////////////////////////////////////////////////////////
 
 }
+// retutns the bigest p
+GLfloat bigest(GLfloat p1, GLfloat p2, GLfloat p3) {
+	GLfloat p[3];
+	GLfloat returned;
+	int i ;
+	p[0] = p1;
+	p[1] = p2;
+	p[2] = p3;
+	returned = p[0];
+
+	for (i = 1; i < 3; i++) {
+		if (p[i] > returned) {
+			returned = p[i];
+		}
+	}
+
+	return returned;
+	
+}//end of bigest
+
+// retutns the smallest p
+GLfloat smallest(GLfloat p1, GLfloat p2, GLfloat p3) {
+	GLfloat p[3];
+	GLfloat returned;
+	int i;
+	p[0] = p1;
+	p[1] = p2;
+	p[2] = p3;
+	returned = p[0];
+
+	for (i = 1; i < 3; i++) {
+		if (p[i] < returned) {
+			returned = p[i];
+		}
+	}
+
+	return returned;
+
+}//end of bigest
 
 
+void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) {
+	GLfloat bigestX, bigestY, smallestX, smallestY; // points in ractangle created by these points will be tested 
+	GLfloat x1, y1, x2, y2 ,m; // calculation vars
+	//lines =  {0= Ax + By + C }
+	GLfloat A1, B1, C1; //  line 1 vars 
+	GLfloat A2, B2, C2; //  line 2 vars
+	GLfloat A3, B3, C3; //  line 3 vars
 
+	GLfloat alpha,	/*[dist from line 1] dist from  point / dist from  point v3  */
+			beta,	/*[dist from line 2] dist from  point / dist from  point v2  */
+			gamma;	/*[dist from line 3] dist from  point / dist from  point v1  */
+
+	int iX, iY; // index vars
+	// finding lines--------------------
+	/*
+	m =  (y1 - y2)/(x1 - x2)
+	y − y1 = m(x − x1) => 0=m*x - y + y1 - m*x1 
+
+	A=m , B =-1 , C = y1 - m*x1 
+	0= Ax + By + C 
+
+	*/
+	//	line 1: v1 to v2
+	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
+	x2 = v2->pointScreen[0]; y2 = v2->pointScreen[1];
+	m = (y1 - y2) / (x1 - x2);
+	A1 = m;
+	B1 = -1;
+	C1 = y1 - m * x1;
+	//	line 2: v1 to v3
+	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
+	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
+	m = (y1 - y2) / (x1 - x2);
+	A2 = m;
+	B2 = -1;
+	C2 = y1 - m * x1;
+	//	line 3: v2 to v3
+	x1 = v2->pointScreen[0]; y1 = v2->pointScreen[1];
+	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
+	m = (y1 - y2) / (x1 - x2);
+	A3 = m;
+	B3 = -1;
+	C3 = y1 - m * x1;
+	//   findeg ractangle around the triangle ----------------
+	bigestX = bigest(v1->pointScreen[0], v2->pointScreen[0], v3->pointScreen[0]);
+	bigestY = bigest(v1->pointScreen[1], v2->pointScreen[1], v3->pointScreen[1]);
+	smallestX =  smallest(v1->pointScreen[0], v2->pointScreen[0], v3->pointScreen[0]);
+	smallestY =	 smallest(v1->pointScreen[1], v2->pointScreen[1], v3->pointScreen[1]);
+	// making sure the starting x and y are  not out of buffer
+	if (smallestX < 0) {
+		smallestX = 0;
+	}
+	if (smallestY < 0) {
+		smallestY = 0;
+	}
+	// seraching for Barycentic cordinats---------
+	for (iX= smallestX; iX <= bigestX && iX < WIN_SIZE; iX++) {
+
+		for (iY= smallestY; iY <= bigestY && iY < WIN_SIZE; iY++) {
+
+			alpha = (A1 * iX + B1 * iY + C1) / (A1 * v3->pointScreen[0] + B1 * v3->pointScreen[1] + C1);
+			beta =   (A2 * iX + B2 * iY + C2) / (A2 * v2->pointScreen[0] + B2 * v2->pointScreen[1] + C2);
+			gamma = (A3 * iX + B3 * iY + C3) / (A3 * v1->pointScreen[0] + B3 * v1->pointScreen[1] + C3);
+			
+		
+			
+			if (alpha > 0 && alpha < 1 &&
+				beta>0 && beta < 1 &&
+				gamma>0 && gamma < 1 &&
+				alpha + beta + gamma >0.9 && alpha + beta + gamma < 1.1) { // testing wheter the point is in the triangle 
+
+				if (Zbuffer[iX][iY] > (v1->pointScreen[2])*gamma+ (v2->pointScreen[2])*beta + (v3->pointScreen[2])*alpha) { //  testing whether if somting is abstacting the point 
+					setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
+					Zbuffer[iX][iY] = (v1->pointScreen[2]) * gamma + (v2->pointScreen[2]) * beta + (v3->pointScreen[2]) * alpha;
+				}
+			}
+			
+			
+		}
+
+	}
+
+
+}// END of myBarycenticAlgo
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
-
+	
 	V4HomogeneousDivide(v1->pointScreen);
 	V4HomogeneousDivide(v2->pointScreen);
 	V4HomogeneousDivide(v3->pointScreen);
@@ -291,12 +420,8 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	else{
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-	}
+		myBarycenticAlgo(v1,v2,v3,FaceColor);
+		}
 }
 
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
