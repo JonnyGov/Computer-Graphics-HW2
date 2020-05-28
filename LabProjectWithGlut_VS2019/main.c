@@ -297,24 +297,31 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	else {
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
-		rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle);
+		rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle); // set zone for draw pixels. (rectangle)
 		barycentricCoordinatesDrawPixel(v1->pointScreen[0], v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor, rectangle);
 
 	}
 }
-void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]) {
-	GLfloat x[3] = { p1[0],p2[0],p3[0] };
-	GLfloat y[3] = { p1[1],p2[1],p3[1] };
+void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]) { // insert 3 points and get the rectangle zone of them.
+	GLfloat x[3] = { p1[0],p2[0],p3[0] }; // x of all points
+	GLfloat y[3] = { p1[1],p2[1],p3[1] }; // y of all points
 	//GLfloat maxX = x[0], minX = x[0], maxY = y[0], minY = y[0];
 	GLfloat maxX = 0, minX = WIN_SIZE, maxY = 0, minY = WIN_SIZE;
 	int i = 0;
 
-	for (i = 0; i <= 2; i++) {
+	for (i = 0; i <= 2; i++) { // serach for max and min for x and y.
 		if (maxX < x[i]) maxX = x[i];
 		if (minX > x[i]) minX = x[i];
 		if (maxY < y[i]) maxY = y[i];
 		if (minY > y[i]) minY = y[i];
 	}
+	// max can't be more than win_size
+	if (maxX > WIN_SIZE)maxX = WIN_SIZE;
+	if (maxY > WIN_SIZE)maxY = WIN_SIZE;
+	// min can't be less than 0
+	if (minX < 0)minX = 0;
+	if (minY < 0)minY = 0;
+	// round min and max for use to pixels (integers)
 	rectangle[0] = floorf(minX);
 	rectangle[1] = ceilf(maxX);
 	rectangle[2] = floorf( minY);
@@ -347,22 +354,26 @@ void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfl
 	GLfloat linear1[3],linear2[3], linear3[3];
 	int i, j;
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
-	distance1 = distanceFromLinear(linear1, P1x, P1y);
+	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
 	if (distance1 == 0) distance1 = 0.00001;
 	linearEquation(P1x, P1y, P3x, P3y, linear2); // p1 and p3
-	distance2 = distanceFromLinear(linear2, P2x, P2y);
+	distance2 = distanceFromLinear(linear2, P2x, P2y);  // distance to p2
 	if (distance2 == 0) distance2 = 0.00001;
 	linearEquation(P1x, P1y, P2x, P2y, linear3); // p1 and p2
-	distance3 = distanceFromLinear(linear3, P3x, P3y);
+	distance3 = distanceFromLinear(linear3, P3x, P3y);  // distance to p3
 	if (distance3 == 0) distance3 = 0.00001;
-	for (i = rectangle[0]; i <= rectangle[1]; i++)
-		for (j = rectangle[2]; j <= rectangle[3]; j++)
-		{
+	for (i = rectangle[0]; i <= rectangle[1]; i++) 
+		for (j = rectangle[2]; j <= rectangle[3]; j++) 
+		{ // go for each pixel in the rectangle
 			alpha = distanceFromLinear(linear1, i, j) / distance1;
-			beta = distanceFromLinear(linear2, i, j) / distance2;
-			gamma = distanceFromLinear(linear3, i, j) / distance3;
-			if (alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1)
-				setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]);
+			if (alpha >= 0 && alpha <= 1) { // test alpha in triangle
+				beta = distanceFromLinear(linear2, i, j) / distance2;
+				if (beta >= 0 && beta <= 1) { // test beta in triangle
+					gamma = distanceFromLinear(linear3, i, j) / distance3;
+					if (gamma >= 0 && gamma <= 1) // test gamma in triangle
+						setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+				}
+			}
 		}
 }
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
