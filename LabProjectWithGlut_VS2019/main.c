@@ -351,7 +351,7 @@ GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py) { // retur
 }
 void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4]) {
 	GLfloat alpha, beta, gamma,distance1,distance2,distance3;
-	GLfloat linear1[3],linear2[3], linear3[3];
+	GLfloat linear1[3],linear2[3], linear3[3]; // 3 linear equation for each line.
 	int i, j;
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
 	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
