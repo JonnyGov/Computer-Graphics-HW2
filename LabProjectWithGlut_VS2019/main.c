@@ -29,7 +29,7 @@ typedef struct{
 	GLfloat NormalEyeCoordinates[4];
 	GLfloat pointScreen[4];
 	GLfloat PixelValue;
-} Vertex;
+} ;
 
 enum ProjectionTypeEnum{ ORTHOGRAPHIC = 1, PERSPECTIVE };
 enum DisplayTypeEnum{ FACE_VERTEXES = 11, FACE_COLOR, LIGHTING_FLAT, LIGHTING_GOURARD, LIGHTING_PHONG };
@@ -62,7 +62,7 @@ void VertexProcessing(Vertex *v);
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3]);
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n);
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
-
+void barycentricCoordinatesDrawPixel(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y);
 
 GLMmodel *model_ptr;
 void ClearColorBuffer();
@@ -215,7 +215,7 @@ void ModelProcessing()
 	//////////////////////////////////////////////////////////////////////////////////
 	ClearColorBuffer(); // setting color buffer to background color
 	//add here clearing z-buffer
-
+	
 }
 
 
@@ -273,9 +273,12 @@ void VertexProcessing(Vertex *v)
 }
 
 
-
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
+	//local var addded:
+	int[4] rectangle = rectanglePoints();
+	int i, j;
+	//end local var added
 
 	V4HomogeneousDivide(v1->pointScreen);
 	V4HomogeneousDivide(v2->pointScreen);
@@ -291,6 +294,10 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	else{
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
+		
+		for (i = rectangle[0]; i < rectangle[1]; i++)
+			for (j = rectangle[2]; j < rectangle[3]; j++)
+				barycentricCoordinatesDrawPixel(i, j, v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1]);
 
 
 
@@ -298,7 +305,67 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 
 	}
 }
+int* rectanglePoints(GLfloat* p1, GLfloat* p2, GLfloat* p3) {
+	int maxX=x[0], minX=x[0], maxY=y[0], minY=y[0], i=0;
+	int rectangle[4];
+	int x[3] = { round(p1[0]),round(p2[0]),round(p3[0]) };
+	int y[3] = { round(p1[1]),round(p2[1]),round(p3[1]) };
+	for (i = 1; i < 2; i++) {
+		if (maxX < x[i]) maxX = x[i];
+		if (minX > x[i]) minX = x[i];
+		if (maxY < y[i]) maxY = y[i];
+		if (minY > y[i]) minY = y[i];
+	}
+	rectangle[0] = minX;
+	rectangle[1] = maxX;
+	rectangle[2] = minY;
+	rectangle[3] = maxY;
+	return rectangle;
+}
+GLfloat* linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2) { // return 0=A , 1=B , 2=C
+	GLfloat deltaX, delatY,  m,  n,  A,  B,  C;
+	GLfloat linear[3];
+	// y=mx+n
+	//Ax+By+C=0
+	//A=-m
+	//B=1
+	//C=-n
+	// m= (y2 - y1) /(x2 - x1)
+	// n = y1-mx1
+	deltaX = x2 - x1;
+	delatY = y2 - y1;
+	m = delatY / deltaX;
+	n = y1 - m * x1;
+	A = -m;
+	B = 1;
+	C = -n;
+	linear[0] = A;
+	linear[1] = B;
+	linear[2] = C;
+	return linear;
 
+}
+GLfloat distanceFromLinear(GLfloat* linear, GLfloat Px, GLfloat Py) { // return the distnace 
+	GLfloat distance;
+	distance = linear[0] * Px + linear[1] * Py + linear[2];
+	distance /= sqrtf(powf(linear[0], 2) + powf(linear[1], 2));
+	return distance;
+}
+GLfloat coefficientForBarycentricCoordinates(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y) {
+	GLfloat linear[3], bigDistance, smallDistance, coefficient;
+	linear = linearEquation(P2x, P2y, P3x, P3y);
+	bigDistance = distanceFromLinear(linear, P1x, P1y);
+	smallDistance = (linear, Px, Py);
+	coefficient = smallDistance / bigDistance;
+	return coefficient;
+}
+void barycentricCoordinatesDrawPixel(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y) {
+	GLfloat alpha,beta,gamma;
+	alpha = coefficientForBarycentricCoordinates(Px, Py, P1x, P1y, P2x, P2y, P3x, P3y);
+	beta= coefficientForBarycentricCoordinates(Px, Py, P2x, P2y, P1x, P1y, P3x, P3y);
+	gamma = coefficientForBarycentricCoordinates(Px, Py, P3x, P3y, P1x, P1y, P2x, P2y);
+	setPixel(Px, Py, alpha, beta, gamma);
+}
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
 {
 	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
