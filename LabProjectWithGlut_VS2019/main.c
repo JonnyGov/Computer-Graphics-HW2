@@ -64,9 +64,8 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
 void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat linear[3]);
 void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]);
-void barycentricCoordinatesDrawPixel(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3]);
+void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4]);
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py);
-GLfloat coefficientForBarycentricCoordinates(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y);
 
 GLMmodel *model_ptr;
 void ClearColorBuffer();
@@ -281,7 +280,6 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
 	//local var addded:
 	int rectangle[4];
-	rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle);
 	int i, j;
 	//end local var added
 
@@ -296,17 +294,11 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 		DrawLineBresenham(round(v2->pointScreen[0]), round(v2->pointScreen[1]), round(v3->pointScreen[0]), round(v3->pointScreen[1]), 1, 1, 1);
 		DrawLineBresenham(round(v3->pointScreen[0]), round(v3->pointScreen[1]), round(v1->pointScreen[0]), round(v1->pointScreen[1]), 1, 1, 1);
 	}
-	else{
+	else {
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
-		
-		for (i = rectangle[0]; i <= rectangle[1]; i++)
-			for (j = rectangle[2]; j <= rectangle[3]; j++)
-				//barycentricCoordinatesDrawPixel(i, j, v1->pointScreen[0]/ v1->pointScreen[3], v1->pointScreen[1]/v1->pointScreen[3], v2->pointScreen[0]/v2->pointScreen[3], v2->pointScreen[1] / v2->pointScreen[3], v3->pointScreen[0] / v3->pointScreen[3], v3->pointScreen[1] / v3->pointScreen[3], FaceColor);
-		barycentricCoordinatesDrawPixel(i, j, v1->pointScreen[0] , v1->pointScreen[1] , v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor);
-
-
-
+		rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle);
+		barycentricCoordinatesDrawPixel(v1->pointScreen[0], v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor, rectangle);
 
 	}
 }
@@ -329,7 +321,7 @@ void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[
 	rectangle[3] = ceilf(maxY);
 }
 void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat linear[3]) { // return 0=A , 1=B , 2=C
-	GLfloat deltaX, delatY,  m,  n,  A,  B,  C;
+	GLfloat  m, deltaX;
 	// y=mx+n
 	//Ax+By+C=0
 	//A=-m
@@ -338,39 +330,40 @@ void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat line
 	// m= (y2 - y1) /(x2 - x1)
 	// n = y1-mx1
 	deltaX =x2 - x1;
-	delatY = y2 - y1;
-	m = delatY / deltaX;
-	n = y1 - m * x1;
-	A = -m;
-	B = 1.0;
-	C = -n;
-	linear[0] = A;
-	linear[1] = B;
-	linear[2] = C;
+	//delatY = y2 - y1;
+	if (deltaX == 0)deltaX = 0.00001; // this for when delta x is zero (it will be exception)
+	m = (y2 - y1)/ deltaX;
+	//n = y1 - m * x1;
+	linear[0] = -m;
+	linear[1] = 1.0;
+	linear[2] = -(y2 - m * x2);
 
 }
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py) { // return the distnace 
-	GLfloat distance;
-	distance = linear[0] * Px + linear[1] * Py + linear[2];
-	//distance /= sqrtf(powf(linear[0], 2) + powf(linear[1], 2));
-	return distance;
+	return linear[0] * Px + linear[1] * Py + linear[2];
 }
-GLfloat coefficientForBarycentricCoordinates(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y) {
-	GLfloat linear[3];
-	GLfloat bigDistance, smallDistance, coefficient;
-	linearEquation(P2x, P2y, P3x, P3y, linear);
-	bigDistance = distanceFromLinear(linear, P1x, P1y);
-	smallDistance = distanceFromLinear(linear, Px, Py);
-	coefficient = smallDistance / bigDistance;
-	return coefficient;
-}
-void barycentricCoordinatesDrawPixel(GLfloat Px, GLfloat Py, GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3]) {
-	GLfloat alpha, beta, gamma;
-	alpha = coefficientForBarycentricCoordinates(Px, Py, P1x, P1y, P2x, P2y, P3x, P3y);
-	beta= coefficientForBarycentricCoordinates(Px, Py, P2x, P2y, P3x, P3y, P1x, P1y);
-	gamma = coefficientForBarycentricCoordinates(Px, Py, P3x, P3y, P2x, P2y, P1x, P1y);
-	if (alpha>=0 && beta>=0 && gamma>=0 && alpha <=1 && beta<=1 && gamma<=1)
-	setPixel(Px, Py, faceColor[0], faceColor[1], faceColor[2]);
+void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4]) {
+	GLfloat alpha, beta, gamma,distance1,distance2,distance3;
+	GLfloat linear1[3],linear2[3], linear3[3];
+	int i, j;
+	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
+	distance1 = distanceFromLinear(linear1, P1x, P1y);
+	if (distance1 == 0) distance1 = 0.00001;
+	linearEquation(P1x, P1y, P3x, P3y, linear2); // p1 and p3
+	distance2 = distanceFromLinear(linear2, P2x, P2y);
+	if (distance2 == 0) distance2 = 0.00001;
+	linearEquation(P1x, P1y, P2x, P2y, linear3); // p1 and p2
+	distance3 = distanceFromLinear(linear3, P3x, P3y);
+	if (distance3 == 0) distance3 = 0.00001;
+	for (i = rectangle[0]; i <= rectangle[1]; i++)
+		for (j = rectangle[2]; j <= rectangle[3]; j++)
+		{
+			alpha = distanceFromLinear(linear1, i, j) / distance1;
+			beta = distanceFromLinear(linear2, i, j) / distance2;
+			gamma = distanceFromLinear(linear3, i, j) / distance3;
+			if (alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1)
+				setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]);
+		}
 }
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
 {
