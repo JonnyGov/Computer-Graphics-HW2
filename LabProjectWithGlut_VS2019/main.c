@@ -468,11 +468,15 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 {
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
-	GLfloat Id=0, Is=0, Ia=0 ,NL,R[3],L[3],N[3],camera[3];
-	//Vminus(L, point, LightPos, 3);
-	//Vminus(N, PointNormal, point, 3);
-	//Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
-	NL = V3dot(PointNormal, LightPos);
+	GLfloat Id=0, Is=0, Ia=0 ,NL,R[3],L[3],N[3],camera[3],p[3];
+	Vminus(p, point, GlobalGuiParamsForYou.CameraPos,3);
+	V3Normalize(p);
+	Vminus(L, p, LightPos, 3);
+	//V3Normalize(L);
+	Vminus(N, PointNormal, p, 3);
+	//V3Normalize(N);
+	Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
+	NL = V3dot(PointNormal, L);
 	Id = Kd* 1.0 *NL;
 	if (Id < 0)Id = 0;
 	else if (Id > 1) Id = 1;
@@ -481,7 +485,7 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 	Is = Ks* 1.0 *powf (V3dot(GlobalGuiParamsForYou.CameraPos, R),n);
 	if (Is < 0)Is = 0;
 	else if (Is > 1) Is = 1;
-	
+	Is = 0;
 	Ia = Ka * 1.0;
 	if (Ia < 0)Ia = 0;
 	else if (Ia > 1) Ia = 1;
