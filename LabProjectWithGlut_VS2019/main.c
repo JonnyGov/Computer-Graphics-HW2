@@ -305,6 +305,7 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 		rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle); // set zone for draw pixels. (rectangle)
 		barycentricCoordinatesDrawPixel(v1->pointScreen[0], v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor, rectangle, zAttributes);
 
+		
 	}
 }
 void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]) { // insert 3 points and get the rectangle zone of them.
@@ -351,6 +352,16 @@ void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat line
 	linear[2] = -(y2 - m * x2);
 
 }
+void NEquation(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLfloat y2, GLfloat z2, GLfloat x3, GLfloat y3, GLfloat z3, GLfloat normal[3]) { // return 0=A , 1=B , 2=C
+	GLfloat u[3], v[3];
+	u[0] = x1 - x2;
+	u[1] = y1 - y2;
+	u[2] = z1 - z2;
+	v[0] = x3 - x2;
+	v[1] = y3 - y2;
+	v[2] = z3 - z2;
+	V3cross(normal, v, u);
+}
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py) { // return the distnace 
 	return linear[0] * Px + linear[1] * Py + linear[2];
 }
@@ -365,7 +376,9 @@ GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat g
 void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4], GLfloat zAtributes[3]) {
 	GLfloat alpha, beta, gamma,distance1,distance2,distance3;
 	GLfloat linear1[3],linear2[3], linear3[3]; // 3 linear equation for each line.
+	GLfloat normal[3], point[3],light;
 	int i, j;
+	NEquation(P1x, P1y, zAtributes[0], P2x, P2y, zAtributes[1], P3x, P3y, zAtributes[2],normal);
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
 	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
 	if (distance1 == 0) distance1 = 0.00001;
@@ -385,8 +398,17 @@ void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfl
 					gamma = distanceFromLinear(linear3, i, j) / distance3;
 					if (gamma >= 0 && gamma <= 1) // test gamma in triangle
 					{
-						if (addPixelToZBuffer(i, j, alpha, beta, gamma, zAtributes))
-						setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+						if (addPixelToZBuffer(i, j, alpha, beta, gamma, zAtributes)) {
+							if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+								point[0] = i;
+								point[1] = j;
+								point[2] = Zbuffer[i][j];
+								light = LightingEquation(point, normal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+								setPixel(i, j, light, light, light); // paint pixel.
+							}
+							else
+							setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+						}
 					}
 				}
 			}
@@ -446,9 +468,24 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 {
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
-
-
-	return 1;
+	GLfloat Id=0, Is=0, Ia=0 ,NL,R[3],L[3],N[3],camera[3];
+	//Vminus(L, point, LightPos, 3);
+	//Vminus(N, PointNormal, point, 3);
+	//Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
+	NL = V3dot(PointNormal, LightPos);
+	Id = Kd* 1.0 *NL;
+	if (Id < 0)Id = 0;
+	else if (Id > 1) Id = 1;
+	VscalarMultiply(R, PointNormal, V3dot(PointNormal, LightPos) * 2.0,3); //2(N*incoming)*n
+	Vminus(R, LightPos, R,3);
+	Is = Ks* 1.0 *powf (V3dot(GlobalGuiParamsForYou.CameraPos, R),n);
+	if (Is < 0)Is = 0;
+	else if (Is > 1) Is = 1;
+	
+	Ia = Ka * 1.0;
+	if (Ia < 0)Ia = 0;
+	else if (Ia > 1) Ia = 1;
+	return Id+Is+Ia;
 }
 
 
