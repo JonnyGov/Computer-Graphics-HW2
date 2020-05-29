@@ -64,12 +64,13 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
 void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat linear[3]);
 void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]);
-void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4]);
+void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4], GLfloat zAtributes[3]);
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py);
-
+GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat gamma, GLfloat attributes[3]);
 GLMmodel *model_ptr;
 void ClearColorBuffer();
 void DisplayColorBuffer();
+void ClearZBuffer();
 
 void GraphicsPipeline()
 {
@@ -218,7 +219,7 @@ void ModelProcessing()
 	//////////////////////////////////////////////////////////////////////////////////
 	ClearColorBuffer(); // setting color buffer to background color
 	//add here clearing z-buffer
-	
+	ClearZBuffer();
 }
 
 
@@ -281,6 +282,7 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	//local var addded:
 	int rectangle[4];
 	int i, j;
+	GLfloat zAttributes[3];
 	//end local var added
 
 	V4HomogeneousDivide(v1->pointScreen);
@@ -297,8 +299,11 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	else {
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
+		zAttributes[0] = v1->pointScreen[2];
+		zAttributes[1] = v2->pointScreen[2];
+		zAttributes[2] = v3->pointScreen[2];
 		rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle); // set zone for draw pixels. (rectangle)
-		barycentricCoordinatesDrawPixel(v1->pointScreen[0], v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor, rectangle);
+		barycentricCoordinatesDrawPixel(v1->pointScreen[0], v1->pointScreen[1], v2->pointScreen[0], v2->pointScreen[1], v3->pointScreen[0], v3->pointScreen[1], FaceColor, rectangle, zAttributes);
 
 	}
 }
@@ -349,7 +354,15 @@ void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat line
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py) { // return the distnace 
 	return linear[0] * Px + linear[1] * Py + linear[2];
 }
-void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4]) {
+GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat gamma, GLfloat attributes[3]) {
+	GLfloat result = alpha * attributes[0] + beta * attributes[1] + gamma * attributes[2];
+	if (Zbuffer[x][y] > result) {
+		Zbuffer[x][y] = result;
+		return 1;
+	}
+	return 0;
+}
+void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfloat P2y, GLfloat P3x, GLfloat P3y, GLfloat faceColor[3], int rectangle[4], GLfloat zAtributes[3]) {
 	GLfloat alpha, beta, gamma,distance1,distance2,distance3;
 	GLfloat linear1[3],linear2[3], linear3[3]; // 3 linear equation for each line.
 	int i, j;
@@ -371,7 +384,10 @@ void barycentricCoordinatesDrawPixel(GLfloat P1x, GLfloat P1y, GLfloat P2x, GLfl
 				if (beta >= 0 && beta <= 1) { // test beta in triangle
 					gamma = distanceFromLinear(linear3, i, j) / distance3;
 					if (gamma >= 0 && gamma <= 1) // test gamma in triangle
+					{
+						if (addPixelToZBuffer(i, j, alpha, beta, gamma, zAtributes))
 						setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+					}
 				}
 			}
 		}
@@ -618,7 +634,15 @@ void LoadModelFile()
 
 	glmBoundingBox(model_ptr, GlobalGuiParamsForYou.ModelMinVec, GlobalGuiParamsForYou.ModelMaxVec);
 }
-
+void ClearZBuffer()
+{
+	GLuint x, y;
+	for (y = 0; y < WIN_SIZE; y++) {
+		for (x = 0; x < WIN_SIZE; x++) {
+			Zbuffer[y][x] = 1;
+		}
+	}
+}
 void ClearColorBuffer()
 {
 	GLuint x, y;
