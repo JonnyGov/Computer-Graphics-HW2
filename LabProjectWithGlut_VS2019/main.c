@@ -318,10 +318,15 @@ GLfloat smallest(GLfloat p1, GLfloat p2, GLfloat p3) {
 
 }//end of bigest
 
+GLfloat barCoordinat(Vertex *otherV , GLfloat A , GLfloat B, GLfloat C,int iX,int iY ) {
+	GLfloat testedPointDistFromLine = A * iX + B * iY + C;
+	GLfloat otherVdistFromLine = A * otherV->pointScreen[0] + B * otherV->pointScreen[1] + C;
+	 return testedPointDistFromLine / (otherVdistFromLine);
+}
 
 void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) {
 	GLfloat bigestX, bigestY, smallestX, smallestY; // points in ractangle created by these points will be tested 
-	GLfloat x1, y1, x2, y2 ,m; // calculation vars
+	GLfloat x1, y1, x2, y2 ,m ,dx,dy; // calculation vars
 	//lines =  {0= Ax + By + C }
 	GLfloat A1, B1, C1; //  line 1 vars 
 	GLfloat A2, B2, C2; //  line 2 vars
@@ -332,6 +337,7 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 			gamma;	/*[dist from line 3] dist from  point / dist from  point v1  */
 
 	int iX, iY; // index vars
+
 	// finding lines--------------------
 	/*
 	m =  (y1 - y2)/(x1 - x2)
@@ -344,21 +350,30 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 	//	line 1: v1 to v2
 	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
 	x2 = v2->pointScreen[0]; y2 = v2->pointScreen[1];
-	m = (y1 - y2) / (x1 - x2);
+	dy = y1 - y2;
+	dx = x1 - x2;
+	if (dx == 0)dx = 0.00001; //canot div by zero
+	m = dy / dx;
 	A1 = m;
 	B1 = -1;
 	C1 = y1 - m * x1;
 	//	line 2: v1 to v3
 	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
 	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
-	m = (y1 - y2) / (x1 - x2);
+	dy = y1 - y2;
+	dx = x1 - x2;
+	if (dx == 0)dx = 0.00001;
+	m = dy / dx;
 	A2 = m;
 	B2 = -1;
 	C2 = y1 - m * x1;
 	//	line 3: v2 to v3
 	x1 = v2->pointScreen[0]; y1 = v2->pointScreen[1];
 	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
-	m = (y1 - y2) / (x1 - x2);
+	dy = y1 - y2;
+	dx = x1 - x2;
+	if (dx == 0)dx = 0.00001;
+	m = dy / dx;
 	A3 = m;
 	B3 = -1;
 	C3 = y1 - m * x1;
@@ -379,10 +394,9 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 
 		for (iY= smallestY; iY <= bigestY && iY < WIN_SIZE; iY++) {
 
-			alpha = (A1 * iX + B1 * iY + C1) / (A1 * v3->pointScreen[0] + B1 * v3->pointScreen[1] + C1);
-			beta =   (A2 * iX + B2 * iY + C2) / (A2 * v2->pointScreen[0] + B2 * v2->pointScreen[1] + C2);
-			gamma = (A3 * iX + B3 * iY + C3) / (A3 * v1->pointScreen[0] + B3 * v1->pointScreen[1] + C3);
-			
+			alpha = barCoordinat(v3,A1,B1,C1,iX,iY);
+			beta = barCoordinat(v2, A2, B2, C2, iX, iY);
+			gamma = barCoordinat(v1, A3, B3, C3, iX, iY);
 		
 			
 			if (alpha > 0 && alpha < 1 &&
