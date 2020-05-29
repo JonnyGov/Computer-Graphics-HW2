@@ -276,6 +276,17 @@ void VertexProcessing(Vertex *v)
 	
 	// ex3: calculating lighting for vertex
 	//////////////////////////////////////////////////////////////////////////////////
+	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD|| GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+
+		GlobalGuiParamsForYou.LightPosition[0] = -GlobalGuiParamsForYou.CameraPos[0];
+		GlobalGuiParamsForYou.LightPosition[1] = -GlobalGuiParamsForYou.CameraPos[1];
+		GlobalGuiParamsForYou.LightPosition[2] = -GlobalGuiParamsForYou.CameraPos[2];
+
+
+
+		v->PixelValue = LightingEquation(v->point3D, v->normal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+		//printf("v->PixelValue : %f", v->PixelValue);
+	}
 
 }
 // retutns the bigest p
@@ -405,7 +416,22 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 				alpha + beta + gamma >0.9 && alpha + beta + gamma < 1.1) { // testing wheter the point is in the triangle 
 
 				if (Zbuffer[iX][iY] > (v1->pointScreen[2])*gamma+ (v2->pointScreen[2])*beta + (v3->pointScreen[2])*alpha) { //  testing whether if somting is abstacting the point 
-					setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
+					if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR) {
+						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
+					}
+					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
+						FaceColor[0] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
+						FaceColor[1] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
+						FaceColor[2] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
+						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
+					}
+					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+						FaceColor[0] =  v3->PixelValue ;
+						FaceColor[1] =   v3->PixelValue ;
+						FaceColor[2] =   v3->PixelValue ;
+						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
+					}
+
 					Zbuffer[iX][iY] = (v1->pointScreen[2]) * gamma + (v2->pointScreen[2]) * beta + (v3->pointScreen[2]) * alpha;
 				}
 			}
@@ -419,7 +445,8 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 }// END of myBarycenticAlgo
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
-	
+	GLfloat myColor[3] ,temp;
+
 	V4HomogeneousDivide(v1->pointScreen);
 	V4HomogeneousDivide(v2->pointScreen);
 	V4HomogeneousDivide(v3->pointScreen);
@@ -431,11 +458,21 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 		DrawLineBresenham(round(v2->pointScreen[0]), round(v2->pointScreen[1]), round(v3->pointScreen[0]), round(v3->pointScreen[1]), 1, 1, 1);
 		DrawLineBresenham(round(v3->pointScreen[0]), round(v3->pointScreen[1]), round(v1->pointScreen[0]), round(v1->pointScreen[1]), 1, 1, 1);
 	}
-	else{
-		//ex3: Barycentric Coordinates and lighting
+	//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
+	else if(GlobalGuiParamsForYou.DisplayType == FACE_COLOR) {
+		
 		myBarycenticAlgo(v1,v2,v3,FaceColor);
 		}
+	else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD || GlobalGuiParamsForYou.DisplayType==LIGHTING_FLAT) {
+		myColor[0] = 0.2;
+		myColor[1] = 0.2;
+		myColor[2] = 0.2;
+
+
+		myBarycenticAlgo(v1, v2, v3, myColor);
+
+	}
 }
 
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
@@ -485,16 +522,89 @@ void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloa
 	setPixel(x2, y2, r, g, b);
 }
 
+ 
+GLfloat  CalSpecular(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Ks, GLfloat Is, GLfloat n) {
+	GLfloat incoming[3],
+		    reflection[3],view[3],
+			temp[3] , tempScalr, tempScalr2;
+	int i;
+	//specular = ks*ls*(V dot R)^n
 
+	// are the vectors parallel to opesite diractions
+	if (LightPos[0] = !0 && LightPos[1] != 0 && LightPos[2] != 0) {
+		if ((PointNormal[0] / LightPos[0]) == (PointNormal[1] / LightPos[1]) == (PointNormal[2] / LightPos[2]) &&
+			PointNormal[0] == -1 * LightPos[0] && PointNormal[1] == -1 * LightPos[1] && PointNormal[2] == -1 * LightPos[2]) {
+			return 0;
+		}
+	}
+	else if (PointNormal[0] !=0 && PointNormal[1] != 0 && PointNormal[2] != 0)
+		if ((LightPos[0]/PointNormal[0])  == (LightPos[1] / PointNormal[1]) == (LightPos[2] / PointNormal[2]) &&
+			PointNormal[0] == -1 * LightPos[0] && PointNormal[1] == -1 * LightPos[1] && PointNormal[2] == -1 * LightPos[2]) {
+			return 0;
+		}
 
+	// R = Incoming - 2 (N(dote)Incoming)N 
+	incoming[0] = point[0] - LightPos[0];  
+	incoming[1] = point[1] - LightPos[1];
+	incoming[2] = point[2] - LightPos[2];
+	V3Normalize(incoming);
+
+	//temp= 2 (N(dote)Incoming)N
+	VscalarMultiply(temp, PointNormal, 2 * V3dot(PointNormal, incoming),3);
+
+	reflection[0] = incoming[0] - temp[0];
+	reflection[1] = incoming[1] - temp[1];
+	reflection[2] = incoming[2] - temp[2];
+
+	// V = eyeLocation - Point 
+	view[0] =  GlobalGuiParamsForYou.CameraPos[0]- point[0];
+	view[1] = GlobalGuiParamsForYou.CameraPos[1] - point[1];
+	view[2] = GlobalGuiParamsForYou.CameraPos[2] - point[2];
+
+	V3Normalize(view);
+
+	//V dot R
+	tempScalr = V3dot(view, reflection);
+	//(V dot R)^n
+	tempScalr2 = tempScalr;
+	for (i = 0; i < n; i++) {
+		tempScalr2 *= tempScalr;
+	}
+
+	return Ks*Is* tempScalr2;
+
+}// end of CalSpecular()
+
+GLfloat  CalDiffuse(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Id) {
+	// diffuse = Kd*Id*(N dot L)
+	GLfloat L[3] ;
+	//L = LightPos- point
+	L[0] = LightPos[0] - point[0];
+	L[1] = LightPos[1] - point[1];
+	L[2] = LightPos[2] - point[2];
+	V3Normalize(L);
+	return Kd * Id * V3dot(PointNormal, L);
+} //end of CalDiffuse
 
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n)
 {
+	GLfloat sum=0, temp=0;
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
-
-
-	return 1;
+	//diffuse 
+		//LightPos[0] += 7; // more like exemple
+	temp = CalDiffuse(point, PointNormal,LightPos,Kd, 1);
+	if (temp > 0)
+		sum += temp;
+	// specular 
+	temp= CalSpecular(point, PointNormal, LightPos, Ks, 1, n);
+	if (temp > 0)
+		sum += temp;
+	// ambient 
+	temp = Ka * 1;
+	if (temp > 0)
+		sum += temp;
+	return sum;
 }
 
 
