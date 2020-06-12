@@ -223,7 +223,7 @@ void ModelProcessing()
 }
 
 
-void VertexProcessing(Vertex *v)
+void VertexProcessing(Vertex* v)
 {
 	GLfloat point3DafterModelingTrans[4];
 	GLfloat temp1[4], temp2[4];
@@ -256,10 +256,10 @@ void VertexProcessing(Vertex *v)
 	M3multiplyV3(v->NormalEyeCoordinates, Mlookat3x3, temp1);
 	V3Normalize(v->NormalEyeCoordinates);
 	v->NormalEyeCoordinates[3] = 1;
-	
+
 	// ex2-5: drawing normals 
 	//////////////////////////////////////////////////////////////////////////////////
-	if (GlobalGuiParamsForYou.DisplayNormals == DISPLAY_NORMAL_YES){
+	if (GlobalGuiParamsForYou.DisplayNormals == DISPLAY_NORMAL_YES) {
 		V4HomogeneousDivide(v->point3DeyeCoordinates);
 		VscalarMultiply(temp1, v->NormalEyeCoordinates, 0.05, 3);
 		Vplus(temp2, v->point3DeyeCoordinates, temp1, 4);
@@ -270,10 +270,14 @@ void VertexProcessing(Vertex *v)
 		V4HomogeneousDivide(v->pointScreen);
 		DrawLineBresenham(round(v->pointScreen[0]), round(v->pointScreen[1]), round(point3D_plusNormal_screen[0]), round(point3D_plusNormal_screen[1]), 0, 0, 1);
 	}
-	
+
 	// ex3: calculating lighting for vertex
 	//////////////////////////////////////////////////////////////////////////////////
-	v->PixelValue=LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition , GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+		V4HomogeneousDivide(v->point3DeyeCoordinates);
+		V4HomogeneousDivide(v->NormalEyeCoordinates);
+		v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+	}
 }
 
 
@@ -282,7 +286,6 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	//local var addded:
 	int rectangle[4];
 	int i, j;
-	GLfloat zAttributes[3];
 	//end local var added
 
 	V4HomogeneousDivide(v1->pointScreen);
@@ -299,9 +302,6 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 	else {
 		//ex3: Barycentric Coordinates and lighting
 		//////////////////////////////////////////////////////////////////////////////////
-		zAttributes[0] = v1->pointScreen[2];
-		zAttributes[1] = v2->pointScreen[2];
-		zAttributes[2] = v3->pointScreen[2];
 		barycentricCoordinatesDrawPixel(v1, v2,v3,FaceColor);
 	}
 }
@@ -360,13 +360,13 @@ GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat g
 	}
 	return 0;
 }
-void barycentricCoordinatesDrawPixel(Vertex *v1,Vertex *v2, Vertex *v3, GLfloat faceColor[3]) {
+void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat faceColor[3]) {
 	GLfloat P1x = v1->pointScreen[0], P1y = v1->pointScreen[1], P2x = v2->pointScreen[0], P2y = v2->pointScreen[1], P3x = v3->pointScreen[0], P3y = v3->pointScreen[1];
-	GLfloat alpha, beta, gamma,distance1,distance2,distance3;
-	GLfloat linear1[3],linear2[3], linear3[3]; // 3 linear equation for each line.
-	GLfloat normal[3], point[3],light;
+	GLfloat alpha, beta, gamma, distance1, distance2, distance3;
+	GLfloat linear1[3], linear2[3], linear3[3]; // 3 linear equation for each line.
+	GLfloat normal[3], point[3], light;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
-	int i, j , rectangle[4];
+	int i, j, rectangle[4];
 	rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle);
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
 	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
@@ -377,8 +377,8 @@ void barycentricCoordinatesDrawPixel(Vertex *v1,Vertex *v2, Vertex *v3, GLfloat 
 	linearEquation(P1x, P1y, P2x, P2y, linear3); // p1 and p2
 	distance3 = distanceFromLinear(linear3, P3x, P3y);  // distance to p3
 	if (distance3 == 0) distance3 = 0.00001;
-	for (i = rectangle[0]; i <= rectangle[1]; i++) 
-		for (j = rectangle[2]; j <= rectangle[3]; j++) 
+	for (i = rectangle[0]; i <= rectangle[1]; i++)
+		for (j = rectangle[2]; j <= rectangle[3]; j++)
 		{ // go for each pixel in the rectangle
 			alpha = distanceFromLinear(linear1, i, j) / distance1;
 			if (alpha >= 0 && alpha <= 1) { // test alpha in triangle
@@ -389,11 +389,10 @@ void barycentricCoordinatesDrawPixel(Vertex *v1,Vertex *v2, Vertex *v3, GLfloat 
 					{
 						if (addPixelToZBuffer(i, j, alpha, beta, gamma, zAtributes)) {
 							if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
-								light = v1->PixelValue * alpha + v2->PixelValue * beta + v3->PixelValue * gamma;
-								setPixel(i, j, light, light, light); // paint pixel.
+								light = (v1->PixelValue + v2->PixelValue + v3->PixelValue) / 3.0;
+								setPixel(i, j, light, light, light);
 							}
-							else
-							setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+							else setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
 						}
 					}
 				}
@@ -455,24 +454,34 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
 	GLfloat Id = 0, Is = 0, Ia = 0, NL, R[3], L[3], N[3], camera[3];
-	Vminus(L, LightPos,point, 3);
+	//callculate defuse:
+	Vminus(L, point, LightPos,3);
 	V3Normalize(L);
-	//Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
-	NL = V3dot(PointNormal, L);
-	Id = Kd* 1.0 *NL;
+	L[0] *= -1.0;
+	L[1] *= -1.0;
+	MatrixCopy(N, PointNormal, 3);
+	V3Normalize(N);
+	NL = V3dot(L,N);  // (N*incoming) or (N*light)
+	Id = Kd * NL;
 	if (Id < 0)Id = 0;
 	else if (Id > 1) Id = 1;
-	VscalarMultiply(R, PointNormal, NL * 2.0,3); //2(N*incoming)*n
-	Vminus(R, L, R,3);
-	Is = Ks* 1.0 *powf (V3dot(GlobalGuiParamsForYou.CameraPos, R),n);
-	//DEBUG 
-	Is = 0;
-	if (Is < 0)Is = 0;
-	else if (Is > 1) Is = 1;
-	Ia = Ka * 1.0;
+	//callculate specular:
+	Vminus(L, point, LightPos, 3);
+	V3Normalize(L);
+	NL = V3dot( N,L);
+	VscalarMultiply(R, N, NL * 2.0, 3); //2(N*incoming)*N
+	Vminus(R, L, R, 3);
+	V3Normalize(R);
+	Vminus(camera , point, GlobalGuiParamsForYou.CameraPos , 3);
+	V3Normalize(camera);
+	Is = Ks * (powf(V3dot(camera, R), n));
+	if (Is < 0)Is = 0.0;
+	else if (Is > 1) Is = 1.0;
+	//callculate ambient:
+	Ia = Ka;
 	if (Ia < 0)Ia = 0;
 	else if (Ia > 1) Ia = 1;
-	return Id+Is+Ia;
+	return Id + Is + Ia;
 }
 
 
