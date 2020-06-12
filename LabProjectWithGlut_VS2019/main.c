@@ -285,6 +285,7 @@ void VertexProcessing(Vertex *v)
 
 
 		v->PixelValue = LightingEquation(v->point3D, v->normal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+		//v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
 		//printf("v->PixelValue : %f", v->PixelValue);
 	}
 
@@ -310,18 +311,20 @@ GLfloat bigest(GLfloat p1, GLfloat p2, GLfloat p3) {
 }//end of bigest
 
 // retutns the smallest p
-GLfloat smallest(GLfloat p1, GLfloat p2, GLfloat p3) {
+GLfloat* smallest(GLfloat p1, GLfloat p2, GLfloat p3) {
 	GLfloat p[3];
-	GLfloat returned;
+	GLfloat returned[2];//[0] = smallest value , [1] index of somallest acorfing to entering order
 	int i;
 	p[0] = p1;
 	p[1] = p2;
 	p[2] = p3;
-	returned = p[0];
+	returned[0] = p[0];
+	returned[1] =1;
 
 	for (i = 1; i < 3; i++) {
-		if (p[i] < returned) {
-			returned = p[i];
+		if (p[i] < returned[0]) {
+			returned[0] = p[i];
+			returned[1] = i+1;
 		}
 	}
 
@@ -334,30 +337,19 @@ GLfloat barCoordinat(Vertex *otherV , GLfloat A , GLfloat B, GLfloat C,int iX,in
 	GLfloat otherVdistFromLine = A * otherV->pointScreen[0] + B * otherV->pointScreen[1] + C;
 	 return testedPointDistFromLine / (otherVdistFromLine);
 }
-
-void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) {
-	GLfloat bigestX, bigestY, smallestX, smallestY; // points in ractangle created by these points will be tested 
-	GLfloat x1, y1, x2, y2 ,m ,dx,dy; // calculation vars
-	//lines =  {0= Ax + By + C }
-	GLfloat A1, B1, C1; //  line 1 vars 
-	GLfloat A2, B2, C2; //  line 2 vars
-	GLfloat A3, B3, C3; //  line 3 vars
-
-	GLfloat alpha,	/*[dist from line 1] dist from  point / dist from  point v3  */
-			beta,	/*[dist from line 2] dist from  point / dist from  point v2  */
-			gamma;	/*[dist from line 3] dist from  point / dist from  point v1  */
-
-	int iX, iY; // index vars
-
+//creates line from to vertx
+GLfloat* lineCal(Vertex* v1, Vertex* v2) {
 	// finding lines--------------------
 	/*
 	m =  (y1 - y2)/(x1 - x2)
-	y − y1 = m(x − x1) => 0=m*x - y + y1 - m*x1 
+	y − y1 = m(x − x1) => 0=m*x - y + y1 - m*x1
 
-	A=m , B =-1 , C = y1 - m*x1 
-	0= Ax + By + C 
+	A=m , B =-1 , C = y1 - m*x1
+	0= Ax + By + C
 
 	*/
+	GLfloat x1, y1, x2, y2, m, dx, dy; // calculation vars
+	GLfloat lineVars[3]; // [0] =A , [1]=B , [2]=C
 	//	line 1: v1 to v2
 	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
 	x2 = v2->pointScreen[0]; y2 = v2->pointScreen[1];
@@ -365,34 +357,176 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 	dx = x1 - x2;
 	if (dx == 0)dx = 0.00001; //canot div by zero
 	m = dy / dx;
-	A1 = m;
-	B1 = -1;
-	C1 = y1 - m * x1;
+	lineVars[0]= m;
+	lineVars[1] = -1;
+	lineVars[2] = y1 - m * x1;
+	return lineVars;
+}// end of lineCal
+
+GLfloat* lineCalYX(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
+	// finding lines--------------------
+	/*
+	m =  (y1 - y2)/(x1 - x2)
+	y − y1 = m(x − x1) => 0=m*x - y + y1 - m*x1
+
+	A=m , B =-1 , C = y1 - m*x1
+	0= Ax + By + C
+
+	*/
+	GLfloat  m, dx, dy; // calculation vars
+	GLfloat lineVars[3]; // [0] =A , [1]=B , [2]=C
+	//	line 1: v1 to v2
+
+	dy = y1 - y2;
+	dx = x1 - x2;
+	if (dx == 0)dx = 0.00001; //canot div by zero
+	m = dy / dx;
+	lineVars[0] = m;
+	lineVars[1] = -1;
+	lineVars[2] = y1 - m * x1;
+	return lineVars;
+}// end of lineCalYX
+
+GLfloat* triangleNormalCal(Vertex* v1, Vertex* v2, Vertex* v3) {
+	GLfloat P1[3], P2[3] ,normal[3];
+	/*clalculating normal for triangel
+					n=(p2-p1)x(p3-p1)
+					P1=p2-p1
+					P2=p3-p1
+					*/
+	P1[0] = v2->point3D[0] - v1->point3D[0];
+	P1[1] = v2->point3D[1] - v1->point3D[1];
+	P1[2] = v2->point3D[2] - v1->point3D[2];
+
+	P2[0] = v3->point3D[0] - v1->point3D[0];
+	P2[1] = v3->point3D[1] - v1->point3D[1];
+	P2[2] = v3->point3D[2] - v1->point3D[2];
+
+
+	V3cross(normal,P1,P2);
+	V3Normalize(normal);
+
+
+	return normal;
+	
+}//END of triangleNormalCal
+
+GLfloat* triangleCenterCal(Vertex* v1, Vertex* v2, Vertex* v3) {
+
+	/*
+	CenterX=(V1x+V2x+V3x)/3
+	CenterY=(V1y+V2y+V3y)/3
+	CenterZ=(V1z+V2z+V3z)/3
+	*/
+	GLfloat center[3]; // [0]=CenterX , [1]=CenterY, [2]=CenterZ
+	center[0] = (v1->point3D[0] + v2->point3D[0] + v3->point3D[0]) / 3;
+	center[1] = (v1->point3D[1] + v2->point3D[1] + v3->point3D[1]) / 3;
+	center[2] = (v1->point3D[2] + v2->point3D[2] + v3->point3D[2]) / 3;
+
+	return center;
+}//END oftriangle CenterCal
+
+GLfloat* GetLineIntersection(GLfloat* line1, GLfloat* line2) {
+	GLfloat xAy[2];//[0]=x ,[1]=y
+	/*
+	line1[0]=A1
+	line1[1]=B1
+	line1[2]=C1
+	line2[0]=A2
+	line2[1]=B2
+	line2[2]=C2
+
+	y=((A1/A2)*C2-C1)/(B1-B2*(A1/A2))
+	x=(-C2-B2*y)/A2
+	*/
+	xAy[1] = ((line1[0] / line2[0]) * line2[2] - line1[2]) / (line1[1] - line2[1] * (line1[0] / line2[0]));
+	xAy[0] = (-line2[2] - line2[1] * xAy[1]) / line2[0];
+
+	return xAy;
+
+}//END of GetLineIntersection
+GLfloat* GetDE(GLfloat * scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum) {
+
+	//	line 1: v1 to v2
 	//	line 2: v1 to v3
-	x1 = v1->pointScreen[0]; y1 = v1->pointScreen[1];
-	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
-	dy = y1 - y2;
-	dx = x1 - x2;
-	if (dx == 0)dx = 0.00001;
-	m = dy / dx;
-	A2 = m;
-	B2 = -1;
-	C2 = y1 - m * x1;
 	//	line 3: v2 to v3
-	x1 = v2->pointScreen[0]; y1 = v2->pointScreen[1];
-	x2 = v3->pointScreen[0]; y2 = v3->pointScreen[1];
-	dy = y1 - y2;
-	dx = x1 - x2;
-	if (dx == 0)dx = 0.00001;
-	m = dy / dx;
-	A3 = m;
-	B3 = -1;
-	C3 = y1 - m * x1;
+
+	GLfloat* usedLine1, * usedLine2, pointsLight[2];//[0]=D ,[1]=E
+	int Vindex= (int)smallestYVertexNum;
+	GLfloat* temp , returned[4];/* [0]=xE , [1]=yE ,[2]=xD, [3]= yD   */
+	switch (Vindex)
+	{
+	case 1:
+		usedLine1 = line1;
+		usedLine2 = line2;
+		break;
+	case 2:
+		usedLine1 = line1;
+		usedLine2 = line3;
+		break;
+	case 3:
+		usedLine1 = line2;
+		usedLine2 = line3;
+		break;
+	default:
+		printf("no index problom");
+		exit(0);
+		break;
+	}
+
+	//D will be meeting point of scanLIne and usedLine1
+	temp=GetLineIntersection(scanLine, usedLine1);
+	returned[2] = temp[0];
+	returned[3] = temp[1];
+	//E will be meeting point of scanLIne and usedLine2
+	temp=GetLineIntersection(scanLine, usedLine2);
+	returned[0] = temp[0];
+	returned[1] = temp[1];
+
+	return returned;
+}// END of lightDF
+
+void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) {
+	GLfloat bigestX, bigestY, smallestX, smallestY , *smallestArr; // points in ractangle created by these points will be tested 
+
+
+	GLfloat light;
+	GLfloat *temp ,temp2[3],*scanLine, smallestYVertexNum  ;
+	//lines =  {0= Ax + By + C }
+	GLfloat line1[3],  line2[3], line3[3];
+
+	GLfloat alpha,	/*[dist from line 1] dist from  point / dist from  point v3  */
+			beta,	/*[dist from line 2] dist from  point / dist from  point v2  */
+			gamma;	/*[dist from line 3] dist from  point / dist from  point v1  */
+
+	int iX, iY; // index vars
+
+
+	//	line 1: v1 to v2
+	temp = lineCal(v1, v2);
+	line1[0] = temp[0];
+	line1[1] = temp[1];
+	line1[2] = temp[2];
+	//	line 2: v1 to v3
+	temp = lineCal(v1, v3);
+	line2[0] = temp[0];
+	line2[1] = temp[1];
+	line2[2] = temp[2];
+	//	line 3: v2 to v3
+	temp = lineCal(v2, v3);
+	line3[0] = temp[0];
+	line3[1] = temp[1];
+	line3[2]  = temp[2];
+
 	//   findeg ractangle around the triangle ----------------
 	bigestX = bigest(v1->pointScreen[0], v2->pointScreen[0], v3->pointScreen[0]);
 	bigestY = bigest(v1->pointScreen[1], v2->pointScreen[1], v3->pointScreen[1]);
-	smallestX =  smallest(v1->pointScreen[0], v2->pointScreen[0], v3->pointScreen[0]);
-	smallestY =	 smallest(v1->pointScreen[1], v2->pointScreen[1], v3->pointScreen[1]);
+	smallestArr =  smallest(v1->pointScreen[0], v2->pointScreen[0], v3->pointScreen[0]);
+	smallestX = smallestArr[0];
+	smallestArr =	 smallest(v1->pointScreen[1], v2->pointScreen[1], v3->pointScreen[1]);
+	smallestY = smallestArr[0];
+	smallestYVertexNum = smallestArr[1];
+
 	// making sure the starting x and y are  not out of buffer
 	if (smallestX < 0) {
 		smallestX = 0;
@@ -403,12 +537,17 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 	// seraching for Barycentic cordinats---------
 	for (iX= smallestX; iX <= bigestX && iX < WIN_SIZE; iX++) {
 
+		scanLine=lineCalYX(iX, iX, smallestY, bigestY); // scan Line
+		
+
+
 		for (iY= smallestY; iY <= bigestY && iY < WIN_SIZE; iY++) {
 
-			alpha = barCoordinat(v3,A1,B1,C1,iX,iY);
-			beta = barCoordinat(v2, A2, B2, C2, iX, iY);
-			gamma = barCoordinat(v1, A3, B3, C3, iX, iY);
-		
+
+			
+			alpha = barCoordinat(v3,line1[0], line1[1], line1[2],iX,iY);
+			beta = barCoordinat(v2, line2[0], line2[1], line2[2], iX, iY);
+			gamma = barCoordinat(v1, line3[0], line3[1], line3[2], iX, iY);
 			
 			if (alpha > 0 && alpha < 1 &&
 				beta>0 && beta < 1 &&
@@ -416,7 +555,8 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 				alpha + beta + gamma >0.9 && alpha + beta + gamma < 1.1) { // testing wheter the point is in the triangle 
 
 				if (Zbuffer[iX][iY] > (v1->pointScreen[2])*gamma+ (v2->pointScreen[2])*beta + (v3->pointScreen[2])*alpha) { //  testing whether if somting is abstacting the point 
-					if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR) {
+					if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR||
+						GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
 					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
@@ -425,13 +565,6 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 						FaceColor[2] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
-					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
-						FaceColor[0] =  v3->PixelValue ;
-						FaceColor[1] =   v3->PixelValue ;
-						FaceColor[2] =   v3->PixelValue ;
-						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
-					}
-
 					Zbuffer[iX][iY] = (v1->pointScreen[2]) * gamma + (v2->pointScreen[2]) * beta + (v3->pointScreen[2]) * alpha;
 				}
 			}
@@ -446,6 +579,8 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
 	GLfloat myColor[3] ,temp;
+	GLfloat* temp3, temp2[3];
+	GLfloat light;
 
 	V4HomogeneousDivide(v1->pointScreen);
 	V4HomogeneousDivide(v2->pointScreen);
@@ -464,14 +599,25 @@ void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 		
 		myBarycenticAlgo(v1,v2,v3,FaceColor);
 		}
-	else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD || GlobalGuiParamsForYou.DisplayType==LIGHTING_FLAT) {
+	else if (  GlobalGuiParamsForYou.DisplayType==LIGHTING_FLAT) {
+
+		temp3 = triangleNormalCal(v1, v2, v3);
+		temp2[0] = temp3[0];
+		temp2[1] = temp3[1];
+		temp2[2] = temp3[2];
+		temp3 = triangleCenterCal(v1, v2, v3);
+		light = LightingEquation(temp3, temp2, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+		myColor[0] = light;
+		myColor[1] = light;
+		myColor[2] = light;
+
+		myBarycenticAlgo(v1, v2, v3, myColor);
+	}
+	else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD ) {
 		myColor[0] = 0.2;
 		myColor[1] = 0.2;
 		myColor[2] = 0.2;
-
-
 		myBarycenticAlgo(v1, v2, v3, myColor);
-
 	}
 }
 
@@ -552,9 +698,14 @@ GLfloat  CalSpecular(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[
 	//temp= 2 (N(dote)Incoming)N
 	VscalarMultiply(temp, PointNormal, 2 * V3dot(PointNormal, incoming),3);
 
+	//V3Normalize(temp);
+
 	reflection[0] = incoming[0] - temp[0];
 	reflection[1] = incoming[1] - temp[1];
 	reflection[2] = incoming[2] - temp[2];
+
+	V3Normalize(reflection);
+
 
 	// V = eyeLocation - Point 
 	view[0] =  GlobalGuiParamsForYou.CameraPos[0]- point[0];
