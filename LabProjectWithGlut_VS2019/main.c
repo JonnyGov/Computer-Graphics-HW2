@@ -59,9 +59,33 @@ void setPixel(GLint x, GLint y, GLfloat r, GLfloat g, GLfloat b);
 //you should write
 void ModelProcessing();
 void VertexProcessing(Vertex *v);
+GLfloat bigest(GLfloat p1, GLfloat p2, GLfloat p3);
+void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]);
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3]);
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n);
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
+
+GLfloat* smallest(GLfloat p1, GLfloat p2, GLfloat p3);
+
+GLfloat barCoordinat(Vertex* otherV, GLfloat A, GLfloat B, GLfloat C, int iX, int iY);
+
+GLfloat* lineCal(Vertex* v1, Vertex* v2);
+
+GLfloat* lineCalYX(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2);
+
+GLfloat* triangleNormalCal(Vertex* v1, Vertex* v2, Vertex* v3);
+
+GLfloat* triangleCenterCal(Vertex* v1, Vertex* v2, Vertex* v3);
+
+GLfloat* GetLineIntersection(GLfloat* line1, GLfloat* line2);
+
+GLfloat* GetDE(GLfloat* scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3);
+
+GLfloat distBetweenPoints(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
+
+GLfloat pointLight(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat pointX, GLfloat pointY, GLfloat light1, GLfloat light2);
+
+GLfloat pointLight2(GLfloat vals[8]);
 
 
 GLMmodel *model_ptr;
@@ -428,45 +452,76 @@ GLfloat* triangleCenterCal(Vertex* v1, Vertex* v2, Vertex* v3) {
 
 GLfloat* GetLineIntersection(GLfloat* line1, GLfloat* line2) {
 	GLfloat xAy[2];//[0]=x ,[1]=y
-	/*
-	line1[0]=A1
-	line1[1]=B1
-	line1[2]=C1
-	line2[0]=A2
-	line2[1]=B2
-	line2[2]=C2
+	GLfloat A1DA2, DivP1;
+		/*
+		line1[0]=A1
+		line1[1]=B1
+		line1[2]=C1
+		line2[0]=A2
+		line2[1]=B2
+		line2[2]=C2
 
-	y=((A1/A2)*C2-C1)/(B1-B2*(A1/A2))
-	x=(-C2-B2*y)/A2
-	*/
-	xAy[1] = ((line1[0] / line2[0]) * line2[2] - line1[2]) / (line1[1] - line2[1] * (line1[0] / line2[0]));
-	xAy[0] = (-line2[2] - line2[1] * xAy[1]) / line2[0];
+		y=((A1/A2)*C2-C1)/(B1-B2*(A1/A2))
+		A1DA2=(A1/A2)
+		DivP1=(B1-B2*(A1DA2)
+
+		y=((A1DA2)*C2-C1)/(DivP1)
+
+
+		x=(-C2-B2*y)/A2
+		*/
+	if (line2[0] == 0 ) {
+		A1DA2 = line1[0] / 0.00001;
+	}
+	else {
+		A1DA2 = line1[0] / line2[0];
+	}
+		
+	DivP1 = (line1[1] - line2[1] * (A1DA2));
+	if (DivP1 == 0 ) DivP1 = 0.00001;
+		
+
+	xAy[1] = ((A1DA2)*line2[2] - line1[2]) / (DivP1);
+
+	if (line2[0] == 0 ) {
+		xAy[0] = (-line2[2] - line2[1] * xAy[1]) / 0.00001;
+	}
+	else {
+		xAy[0] = (-line2[2] - line2[1] * xAy[1]) / line2[0];
+	}
+
+	
 
 	return xAy;
 
 }//END of GetLineIntersection
-GLfloat* GetDE(GLfloat * scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum) {
+GLfloat* GetDE(GLfloat * scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3) {
 
 	//	line 1: v1 to v2
 	//	line 2: v1 to v3
 	//	line 3: v2 to v3
 
-	GLfloat* usedLine1, * usedLine2, pointsLight[2];//[0]=D ,[1]=E
+
+	GLfloat* usedLine1, * usedLine2, pointsLight[2], pointD[2], pointE[2],lightsDE[2] ,returned[6];//[0]=D ,[1]=E
+	GLfloat vals[8];
 	int Vindex= (int)smallestYVertexNum;
-	GLfloat* temp , returned[4];/* [0]=xE , [1]=yE ,[2]=xD, [3]= yD   */
+	GLfloat* temp , v1Val= v1->PixelValue,v2Val=v2->PixelValue,v3Val=v3->PixelValue;
 	switch (Vindex)
 	{
 	case 1:
 		usedLine1 = line1;
 		usedLine2 = line2;
+
 		break;
 	case 2:
 		usedLine1 = line1;
 		usedLine2 = line3;
+
 		break;
 	case 3:
 		usedLine1 = line2;
 		usedLine2 = line3;
+
 		break;
 	default:
 		printf("no index problom");
@@ -476,24 +531,106 @@ GLfloat* GetDE(GLfloat * scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line
 
 	//D will be meeting point of scanLIne and usedLine1
 	temp=GetLineIntersection(scanLine, usedLine1);
-	returned[2] = temp[0];
-	returned[3] = temp[1];
+	pointD[0] = temp[0];
+	pointD[1] = temp[1];
 	//E will be meeting point of scanLIne and usedLine2
 	temp=GetLineIntersection(scanLine, usedLine2);
-	returned[0] = temp[0];
-	returned[1] = temp[1];
+	pointE[0] = temp[0];
+	pointE[1] = temp[1];
+
+
+
+	switch (Vindex)
+	{
+	case 1:
+		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v2Val;
+		lightsDE[0]=pointLight2(vals);
+		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v3->pointScreen[0]; vals[3] = v3->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v1Val; vals[7] = v3Val;
+		lightsDE[1] = pointLight2(vals);
+		break;
+	case 2:
+		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v2Val;
+		lightsDE[0] = pointLight2(vals);
+		vals[0] = v3->pointScreen[0]; vals[1] = v3->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v3Val; vals[7] = v2Val;
+		lightsDE[1] = pointLight2(vals);
+		break;
+	case 3:
+		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v3->pointScreen[0]; vals[3] = v3->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v3Val;
+		lightsDE[0] = pointLight2(vals);
+		vals[0] = v3->pointScreen[0]; vals[1] = v3->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v3Val; vals[7] = v2Val;
+		lightsDE[1] = pointLight2(vals);
+		break;
+	default:
+		printf("no index problom");
+		exit(0);
+		break;
+	}
+	returned[0] = pointD[0];
+	returned[1] = pointD[1];
+	returned[2] = lightsDE[0];
+	returned[3] = pointE[0];
+	returned[4] = pointE[1];
+	returned[5] = lightsDE[1];
 
 	return returned;
 }// END of lightDF
+GLfloat distBetweenPoints(GLfloat x1, GLfloat y1, GLfloat  x2, GLfloat y2) {
+	GLfloat dX, dY;
+	dX = x1 - x2;
+	dX *= dX;
+	dY = y1 - y2;
+	dY *= dY;
+
+	return sqrtf(dX+dY);
+}// END of distBetweenPoints
+GLfloat pointLight(GLfloat x1, GLfloat y1, GLfloat  x2, GLfloat y2, GLfloat  pointX, GLfloat pointY, GLfloat light1, GLfloat light2 ) {
+	GLfloat dis1T2, dis1Tp, dis2Tp ,div1,div2;
+
+	dis1T2 = distBetweenPoints(x1, y1, x2, y2);
+	dis1Tp= distBetweenPoints(x1, y1, pointX, pointY);
+	dis2Tp = distBetweenPoints(x2, y2, pointX, pointY);
+	if (dis2Tp == 0) return 0;
+
+	div1 = dis1Tp / dis1T2;
+	if (div1 == 0 )div1 = 0.00001;
+	div2 = dis2Tp / dis1T2;
+	if (div2 == 0 )div2 = 0.00001;
+
+	return  div1 * light1 + div2 * light2;
+
+}//END ofpointLight
+
+GLfloat pointLight2(GLfloat vals[8]) {
+	GLfloat x1=vals[0],
+			y1 = vals[1],
+			x2 = vals[2],
+			y2 = vals[3],
+			pointX = vals[4],
+			pointY = vals[5],
+			light1 = vals[6],
+			light2 = vals[7];
+	GLfloat dis1T2, dis1Tp, dis2Tp, div1, div2,ret;
+
+	dis1T2 = distBetweenPoints(x1, y1, x2, y2);
+	dis1Tp = distBetweenPoints(x1, y1, pointX, pointY);
+	dis2Tp = distBetweenPoints(x2, y2, pointX, pointY);
+	if (dis2Tp == 0) return 0;
+
+	div1 = dis1Tp / dis1T2;
+	if (div1 == 0 )div1 = 0.00001;
+	div2 = dis2Tp / dis1T2;
+	if (div2 == 0 )div2 = 0.00001;
+	ret = div1 * light1 + div2 * light2;
+	return ret;
+
+}//END ofpointLight
+
 
 void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) {
 	GLfloat bigestX, bigestY, smallestX, smallestY , *smallestArr; // points in ractangle created by these points will be tested 
-
-
-	GLfloat light;
-	GLfloat *temp ,temp2[3],*scanLine, smallestYVertexNum  ;
-	//lines =  {0= Ax + By + C }
-	GLfloat line1[3],  line2[3], line3[3];
+	GLfloat lightD,lightE, pointD[2], pointE[2]; // [0]=x , [1]=y
+	GLfloat *temp ,temp2,scanLine[3], smallestYVertexNum ;
+	GLfloat line1[3],  line2[3], line3[3];	//lines =  {0= Ax + By + C }
 
 	GLfloat alpha,	/*[dist from line 1] dist from  point / dist from  point v3  */
 			beta,	/*[dist from line 2] dist from  point / dist from  point v2  */
@@ -537,8 +674,17 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 	// seraching for Barycentic cordinats---------
 	for (iX= smallestX; iX <= bigestX && iX < WIN_SIZE; iX++) {
 
-		scanLine=lineCalYX(iX, iX, smallestY, bigestY); // scan Line
-		
+		temp =lineCalYX(iX, iX, smallestY, bigestY); // scan Line- note it is perpendicular  the x axis -> there for linar interpoltion will be done in only one dim
+		scanLine[0] = temp[0];
+		scanLine[1] = temp[1];
+		scanLine[2] = temp[2];
+		temp =GetDE(  scanLine,   line1,  line2,  line3,  smallestYVertexNum,v1,v2,v3);
+		pointD[0] = temp[0];
+		pointD[1] = temp[1];
+		lightD = temp[2];
+		pointE[0] = temp[3];
+		pointE[1] = temp[4];
+		lightE = temp[5];
 
 
 		for (iY= smallestY; iY <= bigestY && iY < WIN_SIZE; iY++) {
@@ -560,9 +706,15 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
 					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
+						/*
 						FaceColor[0] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
 						FaceColor[1] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
 						FaceColor[2] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
+						*/
+						temp2 = pointLight(pointD[0], pointD[1], pointE[0], pointE[1], iX, iY, lightD, lightE);
+						FaceColor[0] = temp2;
+						FaceColor[1] = temp2;
+						FaceColor[2] = temp2;
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
 					Zbuffer[iX][iY] = (v1->pointScreen[2]) * gamma + (v2->pointScreen[2]) * beta + (v3->pointScreen[2]) * alpha;
