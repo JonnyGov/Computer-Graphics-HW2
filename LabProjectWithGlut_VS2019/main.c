@@ -273,7 +273,7 @@ void VertexProcessing(Vertex* v)
 
 	// ex3: calculating lighting for vertex
 	//////////////////////////////////////////////////////////////////////////////////
-	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT || GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
 		V4HomogeneousDivide(v->point3DeyeCoordinates);
 		V4HomogeneousDivide(v->NormalEyeCoordinates);
 		v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
@@ -392,9 +392,14 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								light = (v1->PixelValue + v2->PixelValue + v3->PixelValue) / 3.0;
 								setPixel(i, j, light, light, light);
 							}
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
+								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
+								setPixel(i, j, light, light, light);
+							}
 							else setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
 						}
 					}
+
 				}
 			}
 		}
@@ -454,25 +459,27 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
 	GLfloat Id = 0, Is = 0, Ia = 0, NL, R[3], L[3], N[3], camera[3];
+	int i, oppositeFlag = 0;
 	//callculate defuse:
-	Vminus(L, point, LightPos,3);
+	Vminus(L, LightPos, point, 3);
 	V3Normalize(L);
-	L[0] *= -1.0;
-	L[1] *= -1.0;
+	L[2] *= -1.0;
 	MatrixCopy(N, PointNormal, 3);
 	V3Normalize(N);
-	NL = V3dot(L,N);  // (N*incoming) or (N*light)
+	NL = V3dot(L, N);  // (N*incoming) or (N*light)
 	Id = Kd * NL;
 	if (Id < 0)Id = 0;
 	else if (Id > 1) Id = 1;
 	//callculate specular:
 	Vminus(L, point, LightPos, 3);
+	L[2] *= -1.0;
 	V3Normalize(L);
-	NL = V3dot( N,L);
+	NL = V3dot(N, L);
 	VscalarMultiply(R, N, NL * 2.0, 3); //2(N*incoming)*N
 	Vminus(R, L, R, 3);
 	V3Normalize(R);
-	Vminus(camera , point, GlobalGuiParamsForYou.CameraPos , 3);
+	Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
+	camera[2] *= -1.0;
 	V3Normalize(camera);
 	Is = Ks * (powf(V3dot(camera, R), n));
 	if (Is < 0)Is = 0.0;
