@@ -79,9 +79,7 @@ GLfloat* triangleCenterCal(Vertex* v1, Vertex* v2, Vertex* v3);
 
 GLfloat* GetLineIntersection(GLfloat* line1, GLfloat* line2);
 
-GLfloat lineIntersectionWithX(GLfloat* line1, GLfloat x);
-
-GLfloat* GetDE(GLfloat scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3);
+GLfloat* GetDE(GLfloat* scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3);
 
 GLfloat distBetweenPoints(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
 
@@ -304,15 +302,13 @@ void VertexProcessing(Vertex *v)
 	//////////////////////////////////////////////////////////////////////////////////
 	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD|| GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
 
-		//GlobalGuiParamsForYou.LightPosition[0] = -GlobalGuiParamsForYou.CameraPos[0];
-		//GlobalGuiParamsForYou.LightPosition[1] = -GlobalGuiParamsForYou.CameraPos[1];
-		//GlobalGuiParamsForYou.LightPosition[2] = -GlobalGuiParamsForYou.CameraPos[2];
+		GlobalGuiParamsForYou.LightPosition[0] = -GlobalGuiParamsForYou.CameraPos[0];
+		GlobalGuiParamsForYou.LightPosition[1] = -GlobalGuiParamsForYou.CameraPos[1];
+		GlobalGuiParamsForYou.LightPosition[2] = -GlobalGuiParamsForYou.CameraPos[2];
 
 
 
 		v->PixelValue = LightingEquation(v->point3D, v->normal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
-		//V4HomogeneousDivide(v->point3DeyeCoordinates);
-		//V4HomogeneousDivide(v->NormalEyeCoordinates);
 		//v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
 		//printf("v->PixelValue : %f", v->PixelValue);
 	}
@@ -383,8 +379,8 @@ GLfloat* lineCal(Vertex* v1, Vertex* v2) {
 	x2 = v2->pointScreen[0]; y2 = v2->pointScreen[1];
 	dy = y1 - y2;
 	dx = x1 - x2;
-	if (dx == 0)m = 0; //canot div by zero
-	else m = dy / dx;
+	if (dx == 0)dx = 0.00001; //canot div by zero
+	m = dy / dx;
 	lineVars[0]= m;
 	lineVars[1] = -1;
 	lineVars[2] = y1 - m * x1;
@@ -499,19 +495,7 @@ GLfloat* GetLineIntersection(GLfloat* line1, GLfloat* line2) {
 	return xAy;
 
 }//END of GetLineIntersection
-
-
-GLfloat lineIntersectionWithX(GLfloat* line1 ,GLfloat x) { // returns y value
-
-	if (line1[1] != 0) {
-		return (line1[0]*x + line1[2]) / (-line1[1]);
-	}
-	else {
-		return (line1[0]*x + line1[2]) / (-0.00001);
-	}
-
-}//END intersectionWithX
-GLfloat* GetDE(GLfloat  scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3) {
+GLfloat* GetDE(GLfloat * scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3, GLfloat smallestYVertexNum, Vertex* v1, Vertex* v2, Vertex* v3) {
 
 	//	line 1: v1 to v2
 	//	line 2: v1 to v3
@@ -545,7 +529,6 @@ GLfloat* GetDE(GLfloat  scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3
 		break;
 	}
 
-	/*
 	//D will be meeting point of scanLIne and usedLine1
 	temp=GetLineIntersection(scanLine, usedLine1);
 	pointD[0] = temp[0];
@@ -554,14 +537,6 @@ GLfloat* GetDE(GLfloat  scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3
 	temp=GetLineIntersection(scanLine, usedLine2);
 	pointE[0] = temp[0];
 	pointE[1] = temp[1];
-	*/
-
-	//D will be meeting point of scanLIne and usedLine1
-	pointD[0] = scanLine;
-	pointD[1]= lineIntersectionWithX( usedLine1, scanLine);
-	//E will be meeting point of scanLIne and usedLine2
-	pointE[0] = scanLine;
-	pointE[1] = lineIntersectionWithX(usedLine2, scanLine);
 
 
 
@@ -569,29 +544,21 @@ GLfloat* GetDE(GLfloat  scanLine, GLfloat* line1, GLfloat* line2, GLfloat* line3
 	{
 	case 1:
 		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v2Val;
-		//lightsDE[0]=pointLight2(vals);
-		lightsDE[0] = pointLight(v1->pointScreen[0], 0, v2->pointScreen[0], 0, scanLine, 0, v1Val, v2Val);
+		lightsDE[0]=pointLight2(vals);
 		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v3->pointScreen[0]; vals[3] = v3->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v1Val; vals[7] = v3Val;
-		//lightsDE[1] = pointLight2(vals);
-		lightsDE[1] = pointLight(v1->pointScreen[0], 0, v3->pointScreen[0], 0, scanLine, 0, v1Val, v3Val);
-
+		lightsDE[1] = pointLight2(vals);
 		break;
 	case 2:
 		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v2Val;
-		//lightsDE[0] = pointLight2(vals);
-		lightsDE[0] = pointLight(v1->pointScreen[0], 0, v2->pointScreen[0], 0, scanLine, 0, v1Val, v2Val);
+		lightsDE[0] = pointLight2(vals);
 		vals[0] = v3->pointScreen[0]; vals[1] = v3->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v3Val; vals[7] = v2Val;
-		//lightsDE[1] = pointLight2(vals);
-		lightsDE[1] = pointLight(v3->pointScreen[0], 0, v2->pointScreen[0], 0, scanLine, 0, v3Val, v2Val);
+		lightsDE[1] = pointLight2(vals);
 		break;
 	case 3:
 		vals[0] = v1->pointScreen[0]; vals[1] = v1->pointScreen[1]; vals[2] = v3->pointScreen[0]; vals[3] = v3->pointScreen[1]; vals[4] = pointD[0]; vals[5] = pointD[1]; vals[6] = v1Val; vals[7] = v3Val;
-		//lightsDE[0] = pointLight2(vals);
-		lightsDE[0] = pointLight(v1->pointScreen[0], 0, v3->pointScreen[0], 0, scanLine, 0, v1Val, v3Val);
+		lightsDE[0] = pointLight2(vals);
 		vals[0] = v3->pointScreen[0]; vals[1] = v3->pointScreen[1]; vals[2] = v2->pointScreen[0]; vals[3] = v2->pointScreen[1]; vals[4] = pointE[0]; vals[5] = pointE[1]; vals[6] = v3Val; vals[7] = v2Val;
-		//lightsDE[1] = pointLight2(vals);
-		lightsDE[1] = pointLight(v2->pointScreen[0], 0, v3->pointScreen[0], 0, scanLine, 0, v2Val, v3Val);
-
+		lightsDE[1] = pointLight2(vals);
 		break;
 	default:
 		printf("no index problom");
@@ -629,7 +596,7 @@ GLfloat pointLight(GLfloat x1, GLfloat y1, GLfloat  x2, GLfloat y2, GLfloat  poi
 	div2 = dis2Tp / dis1T2;
 	if (div2 == 0 )div2 = 0.00001;
 
-	return  (1-div1) * light1 + (1-div2) * light2;
+	return  div1 * light1 + div2 * light2;
 
 }//END ofpointLight
 
@@ -653,13 +620,7 @@ GLfloat pointLight2(GLfloat vals[8]) {
 	if (div1 == 0 )div1 = 0.00001;
 	div2 = dis2Tp / dis1T2;
 	if (div2 == 0 )div2 = 0.00001;
-
-	if (div1 > 1) div1 = 1;
-	if (div2 > 1) div2 = 1;
-
-
-	ret = (1-div1) * light1 + (1-div2) * light2;
-
+	ret = div1 * light1 + div2 * light2;
 	return ret;
 
 }//END ofpointLight
@@ -711,14 +672,13 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 		smallestY = 0;
 	}
 	// seraching for Barycentic cordinats---------
-	for (iX= smallestX; iX < bigestX && iX < WIN_SIZE; iX++) {
-		/*
+	for (iX= smallestX; iX <= bigestX && iX < WIN_SIZE; iX++) {
+
 		temp =lineCalYX(iX, iX, smallestY, bigestY); // scan Line- note it is perpendicular  the x axis -> there for linar interpoltion will be done in only one dim
 		scanLine[0] = temp[0];
 		scanLine[1] = temp[1];
 		scanLine[2] = temp[2];
-		*/
-		temp =GetDE(iX+1,   line1,  line2,  line3,  smallestYVertexNum,v1,v2,v3);
+		temp =GetDE(  scanLine,   line1,  line2,  line3,  smallestYVertexNum,v1,v2,v3);
 		pointD[0] = temp[0];
 		pointD[1] = temp[1];
 		lightD = temp[2];
@@ -727,7 +687,7 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 		lightE = temp[5];
 
 
-		for (iY= smallestY; iY < bigestY && iY < WIN_SIZE; iY++) {
+		for (iY= smallestY; iY <= bigestY && iY < WIN_SIZE; iY++) {
 
 
 			
@@ -746,17 +706,15 @@ void myBarycenticAlgo(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat FaceColor[3]) 
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
 					else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
-						
+						/*
 						FaceColor[0] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
 						FaceColor[1] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
 						FaceColor[2] =  alpha * v3->PixelValue + beta * v2->PixelValue + gamma * v1->PixelValue ;
-						
-							
+						*/
 						temp2 = pointLight(pointD[0], pointD[1], pointE[0], pointE[1], iX, iY, lightD, lightE);
 						FaceColor[0] = temp2;
 						FaceColor[1] = temp2;
 						FaceColor[2] = temp2;
-						
 						setPixel(round(iX), round(iY), FaceColor[0], FaceColor[1], FaceColor[2]);
 					}
 					Zbuffer[iX][iY] = (v1->pointScreen[2]) * gamma + (v2->pointScreen[2]) * beta + (v3->pointScreen[2]) * alpha;
