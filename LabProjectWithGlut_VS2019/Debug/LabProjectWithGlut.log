@@ -1,16 +1,6 @@
 ﻿  main.c
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(454,35): warning C4101: 'pointsLight': unreferenced local variable
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(494,17): warning C4101: 'temp2': unreferenced local variable
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(493,10): warning C4101: 'light': unreferenced local variable
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(581,22): warning C4101: 'temp': unreferenced local variable
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(876,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(878,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(1193,2): warning C4996: 'vsprintf': This function or variable may be unsafe. Consider using vsprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(331): warning C4172: returning address of local variable or temporary: returned
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(363): warning C4172: returning address of local variable or temporary: lineVars
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(387): warning C4172: returning address of local variable or temporary: lineVars
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(410): warning C4172: returning address of local variable or temporary: normal
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(426): warning C4172: returning address of local variable or temporary: center
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(445): warning C4172: returning address of local variable or temporary: xAy
-C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(486): warning C4172: returning address of local variable or temporary: returned
+C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(448,22): warning C4101: 'temp': unreferenced local variable
+C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(725,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(727,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Yonathan\source\repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\main.c(1042,2): warning C4996: 'vsprintf': This function or variable may be unsafe. Consider using vsprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   LabProjectWithGlut.vcxproj -> C:\Users\Yonathan\Source\Repos\JonnyGov\Computer-Graphics-HW2\LabProjectWithGlut_VS2019\Debug\ExecutableFile.exe
