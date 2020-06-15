@@ -458,7 +458,7 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 {
 	//ex3: calculate lighting equation
 	//////////////////////////////////////////////////////////////////////////////////
-	GLfloat Id = 0, Is = 0, Ia = 0, NL, R[3], L[3], N[3], camera[3];
+	GLfloat Id = 0, Is = 0, Ia = 0, NL, R[3], L[3], N[3], camera[3], temp1,temp2;
 	int i, oppositeFlag = 0;
 	//callculate defuse:
 	Vminus(L, LightPos, point, 3);
@@ -475,13 +475,17 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 	L[2] *= -1.0;
 	V3Normalize(L);
 	NL = V3dot(N, L);
-	VscalarMultiply(R, N, NL * 2.0, 3); //2(N*incoming)*N
+	VscalarMultiply(R, N, NL, 3); // (N*incoming)*N
+	VscalarMultiply(R, R, 2.0, 3);  //2(N*incoming)*N
 	Vminus(R, L, R, 3);
 	V3Normalize(R);
 	Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
 	camera[2] *= -1.0;
 	V3Normalize(camera);
-	Is = Ks * (powf(V3dot(camera, R), n));
+	temp1 = V3dot(camera, R);
+	temp2 = powf(temp1, n);
+	temp1 = powf(temp1, n + 1);
+	Is =temp1<=temp2 ?Ks * temp1: Ks * temp2;
 	if (Is < 0)Is = 0.0;
 	else if (Is > 1) Is = 1.0;
 	//callculate ambient:
