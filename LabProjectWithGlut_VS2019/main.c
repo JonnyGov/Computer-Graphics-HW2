@@ -412,7 +412,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
 								setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG || TEXTURE_LIGHTING_PHONG) { // PHONG LIGHTING 
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG || GlobalGuiParamsForYou.DisplayType ==TEXTURE_LIGHTING_PHONG) { // PHONG LIGHTING 
 								
 								point[0] = (v1->point3DeyeCoordinates[0] * alpha)+ (v2->point3DeyeCoordinates[0] * beta)+ (v3->point3DeyeCoordinates[0] * gamma);
 								point[1] = (v1->point3DeyeCoordinates[1] * alpha)+ (v2->point3DeyeCoordinates[1] * beta)+ (v3->point3DeyeCoordinates[1] * gamma);
@@ -432,9 +432,15 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								}
 								else setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR) setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
+							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)  
+								setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
 							else if (GlobalGuiParamsForYou.DisplayType == TEXTURE ) {
-
+								t = ((v1->TextureCoordinates[0] * alpha) + (v2->TextureCoordinates[0] * beta) + (v3->TextureCoordinates[0] * gamma)) * TEXTURE_SIZE;
+								s = ((v1->TextureCoordinates[1] * alpha) + (v2->TextureCoordinates[1] * beta) + (v3->TextureCoordinates[1] * gamma)) * TEXTURE_SIZE;
+								if (model_ptr->numtexcoords != 0)
+									setPixel(i, j, (TextureImage[s][t][0] / 255.0), (TextureImage[s][t][1] / 255.0),(TextureImage[s][t][2] / 255.0));
+								else {
+								}
 							}
 						}
 					}
