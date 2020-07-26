@@ -360,6 +360,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	GLfloat P1x = v1->pointScreen[0], P1y = v1->pointScreen[1], P2x = v2->pointScreen[0], P2y = v2->pointScreen[1], P3x = v3->pointScreen[0], P3y = v3->pointScreen[1];
 	GLfloat alpha, beta, gamma, distance1, distance2, distance3;
 	GLfloat linear1[3], linear2[3], linear3[3]; // 3 linear equation for each line.
+	GLfloat point[3],pointNormal[3];
 	GLfloat  light;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
 	int i, j, rectangle[4];
@@ -393,10 +394,17 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								setPixel(i, j, light, light, light);
 							}
 							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) { // PHONG LIGHTING (not working yet)
-								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
+								
+								point[0] = (v1->point3DeyeCoordinates[0] * alpha)+ (v2->point3DeyeCoordinates[0] * beta)+ (v3->point3DeyeCoordinates[0] * gamma);
+								point[1] = (v1->point3DeyeCoordinates[1] * alpha)+ (v2->point3DeyeCoordinates[1] * beta)+ (v3->point3DeyeCoordinates[1] * gamma);
+								point[2] = (v1->point3DeyeCoordinates[2] * alpha)+ (v2->point3DeyeCoordinates[2] * beta)+ (v3->point3DeyeCoordinates[2] * gamma);
+								pointNormal[0] = (v1->NormalEyeCoordinates[0] * alpha) + (v2->NormalEyeCoordinates[0] * beta) + (v3->NormalEyeCoordinates[0] * gamma);
+								pointNormal[1] = (v1->NormalEyeCoordinates[1] * alpha) + (v2->NormalEyeCoordinates[1] * beta) + (v3->NormalEyeCoordinates[1] * gamma);
+								pointNormal[2] = (v1->NormalEyeCoordinates[2] * alpha) + (v2->NormalEyeCoordinates[2] * beta) + (v3->NormalEyeCoordinates[2] * gamma);
+								light=LightingEquation(point, pointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
 								setPixel(i, j, light, light, light);
 							}
-							else setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
+							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR) setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
 						}
 					}
 
