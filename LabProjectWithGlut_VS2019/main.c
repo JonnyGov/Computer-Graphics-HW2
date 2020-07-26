@@ -62,10 +62,10 @@ void VertexProcessing(Vertex *v);
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3]);
 GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat LightPos[3], GLfloat Kd, GLfloat Ks, GLfloat Ka, GLfloat n);
 void DrawLineBresenham(GLint x1, GLint y1, GLint x2, GLint y2, GLfloat r, GLfloat g, GLfloat b);
-void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat linear[3]);
-void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]);
-void barycentricCoordinatesDrawPixel(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat faceColor[3]);
-GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py);
+void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat linear[3]); // get the linear equation from 2 points.
+void rectanglePoints(GLfloat p1[3], GLfloat p2[3], GLfloat p3[3], int rectangle[4]);  // insert 3 points and get the rectangle zone of them. rectangle[minX,maxX,minY,maxY]
+void barycentricCoordinatesDrawPixel(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat faceColor[3]); // callculate the lighting ,color and zbuffer of each pixel and draw it.
+GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py);// get point distance from linear equation.
 GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat gamma, GLfloat attributes[3]);
 GLMmodel *model_ptr;
 void ClearColorBuffer();
@@ -273,7 +273,7 @@ void VertexProcessing(Vertex* v)
 
 	// ex3: calculating lighting for vertex
 	//////////////////////////////////////////////////////////////////////////////////
-	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT || GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
+	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT || GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD || GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) {
 		V4HomogeneousDivide(v->point3DeyeCoordinates);
 		V4HomogeneousDivide(v->NormalEyeCoordinates);
 		v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
@@ -283,10 +283,6 @@ void VertexProcessing(Vertex* v)
 
 void FaceProcessing(Vertex *v1, Vertex *v2, Vertex *v3, GLfloat FaceColor[3])
 {
-	//local var addded:
-	int rectangle[4];
-	int i, j;
-	//end local var added
 
 	V4HomogeneousDivide(v1->pointScreen);
 	V4HomogeneousDivide(v2->pointScreen);
@@ -342,7 +338,7 @@ void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat line
 	deltaX =x2 - x1;
 	//delatY = y2 - y1;
 	if (deltaX == 0)deltaX = 0.00001; // this for when delta x is zero (it will be exception)
-	m = (y2 - y1)/ deltaX;
+	m = (y2 - y1)/ deltaX; // (y2 - y1) /(x2 - x1)
 	//n = y1 - m * x1;
 	linear[0] = -m;
 	linear[1] = 1.0;
@@ -350,24 +346,24 @@ void linearEquation(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat line
 
 }
 GLfloat distanceFromLinear(GLfloat linear[3], GLfloat Px, GLfloat Py) { // return the distnace 
-	return linear[0] * Px + linear[1] * Py + linear[2];
+	return linear[0] * Px + linear[1] * Py + linear[2]; // A*Px+B*Py
 }
 GLboolean addPixelToZBuffer(int x, int y, GLfloat alpha, GLfloat beta, GLfloat gamma, GLfloat attributes[3]) {
-	GLfloat result = alpha * attributes[0] + beta * attributes[1] + gamma * attributes[2];
-	if (Zbuffer[x][y] > result) {
+	GLfloat result = alpha * attributes[0] + beta * attributes[1] + gamma * attributes[2]; // barycentric Coordinates result for z attributs.
+	if (Zbuffer[x][y] > result) { //this pixel is closer from before.
 		Zbuffer[x][y] = result;
-		return 1;
+		return 1; // this pixel added to z buffer.
 	}
-	return 0;
+	return 0; // this pixel is not added to z buffer.
 }
 void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat faceColor[3]) {
 	GLfloat P1x = v1->pointScreen[0], P1y = v1->pointScreen[1], P2x = v2->pointScreen[0], P2y = v2->pointScreen[1], P3x = v3->pointScreen[0], P3y = v3->pointScreen[1];
 	GLfloat alpha, beta, gamma, distance1, distance2, distance3;
 	GLfloat linear1[3], linear2[3], linear3[3]; // 3 linear equation for each line.
-	GLfloat normal[3], point[3], light;
+	GLfloat  light;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
 	int i, j, rectangle[4];
-	rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle);
+	rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle); // rectangle= Area to test.
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
 	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
 	if (distance1 == 0) distance1 = 0.00001;
@@ -379,7 +375,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	if (distance3 == 0) distance3 = 0.00001;
 	for (i = rectangle[0]; i <= rectangle[1]; i++)
 		for (j = rectangle[2]; j <= rectangle[3]; j++)
-		{ // go for each pixel in the rectangle
+		{ // go for each pixel in the rectangle:
 			alpha = distanceFromLinear(linear1, i, j) / distance1;
 			if (alpha >= 0 && alpha <= 1) { // test alpha in triangle
 				beta = distanceFromLinear(linear2, i, j) / distance2;
@@ -388,15 +384,19 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 					if (gamma >= 0 && gamma <= 1) // test gamma in triangle
 					{
 						if (addPixelToZBuffer(i, j, alpha, beta, gamma, zAtributes)) {
-							if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {
+							if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT) {// FLAT LIGHTING
 								light = (v1->PixelValue + v2->PixelValue + v3->PixelValue) / 3.0;
 								setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) {
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD) { // GOURAED LIGHTING
 								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
 								setPixel(i, j, light, light, light);
 							}
-							else setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel.
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) { // PHONG LIGHTING (not working yet)
+								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
+								setPixel(i, j, light, light, light);
+							}
+							else setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
 						}
 					}
 
@@ -461,31 +461,31 @@ GLfloat LightingEquation(GLfloat point[3], GLfloat PointNormal[3], GLfloat Light
 	GLfloat Id = 0, Is = 0, Ia = 0, NL, R[3], L[3], N[3], camera[3], temp1,temp2;
 	int i, oppositeFlag = 0;
 	//callculate defuse:
-	Vminus(L, LightPos, point, 3);
+	Vminus(L, LightPos, point, 3); //L=light 
 	V3Normalize(L);
 	L[2] *= -1.0;
 	MatrixCopy(N, PointNormal, 3);
 	V3Normalize(N);
-	NL = V3dot(L, N);  // (N*incoming) or (N*light)
-	Id = Kd * NL;
+	NL = V3dot(L, N);  // (N*light)
+	Id = Kd * NL; // (N*light) * Kd
 	if (Id < 0)Id = 0;
 	else if (Id > 1) Id = 1;
 	//callculate specular:
-	Vminus(L, point, LightPos, 3);
+	Vminus(L, point, LightPos, 3); // L= incoming
 	L[2] *= -1.0;
 	V3Normalize(L);
-	NL = V3dot(N, L);
+	NL = V3dot(N, L); // (N*incoming)
 	VscalarMultiply(R, N, NL, 3); // (N*incoming)*N
 	VscalarMultiply(R, R, 2.0, 3);  //2(N*incoming)*N
-	Vminus(R, L, R, 3);
+	Vminus(R, L, R, 3); //incoming - 2(N*incoming)*N
 	V3Normalize(R);
 	Vminus(camera, GlobalGuiParamsForYou.CameraPos, point, 3);
 	camera[2] *= -1.0;
 	V3Normalize(camera);
-	temp1 = V3dot(camera, R);
-	temp2 = powf(temp1, n);
-	temp1 = powf(temp1, n + 1);
-	Is =temp1<=temp2 ?Ks * temp1: Ks * temp2;
+	temp1 = V3dot(camera, R); // camera* incoming - 2(N*incoming)*N
+	temp2 = powf(temp1, n); // (camera* incoming - 2(N*incoming)*N)^(n+1)
+	temp1 = powf(temp1, n + 1);// (camera* incoming - 2(N*incoming)*N)^n
+	Is =temp1<=temp2 ?Ks * temp1: Ks * temp2; // test if (camera* incoming - 2(N*incoming)*N)^n is negetive then do it to n+1.
 	if (Is < 0)Is = 0.0;
 	else if (Is > 1) Is = 1.0;
 	//callculate ambient:
@@ -683,7 +683,7 @@ void ClearZBuffer()
 	GLuint x, y;
 	for (y = 0; y < WIN_SIZE; y++) {
 		for (x = 0; x < WIN_SIZE; x++) {
-			Zbuffer[y][x] = 1;
+			Zbuffer[y][x] = 1; // inisilize each pixel in z buffer.
 		}
 	}
 }
