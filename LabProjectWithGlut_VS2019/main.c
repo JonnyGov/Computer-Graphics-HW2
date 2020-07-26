@@ -291,7 +291,7 @@ void VertexProcessing(Vertex* v)
 
 	// ex3: calculating lighting for vertex
 	//////////////////////////////////////////////////////////////////////////////////
-	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT || GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD || GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) {
+	if (GlobalGuiParamsForYou.DisplayType == LIGHTING_FLAT || GlobalGuiParamsForYou.DisplayType == LIGHTING_GOURARD ) {
 		V4HomogeneousDivide(v->point3DeyeCoordinates);
 		V4HomogeneousDivide(v->NormalEyeCoordinates);
 		v->PixelValue = LightingEquation(v->point3DeyeCoordinates, v->NormalEyeCoordinates, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
@@ -378,7 +378,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	GLfloat P1x = v1->pointScreen[0], P1y = v1->pointScreen[1], P2x = v2->pointScreen[0], P2y = v2->pointScreen[1], P3x = v3->pointScreen[0], P3y = v3->pointScreen[1];
 	GLfloat alpha, beta, gamma, distance1, distance2, distance3;
 	GLfloat linear1[3], linear2[3], linear3[3]; // 3 linear equation for each line.
-	GLfloat point[3],pointNormal[3];
+	GLfloat tempPoint[3],tempPointNormal[3];
 	GLfloat  light;
 	int s, t;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
@@ -414,13 +414,13 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 							}
 							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG || GlobalGuiParamsForYou.DisplayType ==TEXTURE_LIGHTING_PHONG) { // PHONG LIGHTING 
 								
-								point[0] = (v1->point3DeyeCoordinates[0] * alpha)+ (v2->point3DeyeCoordinates[0] * beta)+ (v3->point3DeyeCoordinates[0] * gamma);
-								point[1] = (v1->point3DeyeCoordinates[1] * alpha)+ (v2->point3DeyeCoordinates[1] * beta)+ (v3->point3DeyeCoordinates[1] * gamma);
-								point[2] = (v1->point3DeyeCoordinates[2] * alpha)+ (v2->point3DeyeCoordinates[2] * beta)+ (v3->point3DeyeCoordinates[2] * gamma);
-								pointNormal[0] = (v1->NormalEyeCoordinates[0] * alpha) + (v2->NormalEyeCoordinates[0] * beta) + (v3->NormalEyeCoordinates[0] * gamma);
-								pointNormal[1] = (v1->NormalEyeCoordinates[1] * alpha) + (v2->NormalEyeCoordinates[1] * beta) + (v3->NormalEyeCoordinates[1] * gamma);
-								pointNormal[2] = (v1->NormalEyeCoordinates[2] * alpha) + (v2->NormalEyeCoordinates[2] * beta) + (v3->NormalEyeCoordinates[2] * gamma);
-								light=LightingEquation(point, pointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+								tempPoint[0] = (v1->point3DeyeCoordinates[0] * alpha)+ (v2->point3DeyeCoordinates[0] * beta)+ (v3->point3DeyeCoordinates[0] * gamma);
+								tempPoint[1] = (v1->point3DeyeCoordinates[1] * alpha)+ (v2->point3DeyeCoordinates[1] * beta)+ (v3->point3DeyeCoordinates[1] * gamma);
+								tempPoint[2] = (v1->point3DeyeCoordinates[2] * alpha)+ (v2->point3DeyeCoordinates[2] * beta)+ (v3->point3DeyeCoordinates[2] * gamma);
+								tempPointNormal[0] = (v1->NormalEyeCoordinates[0] * alpha) + (v2->NormalEyeCoordinates[0] * beta) + (v3->NormalEyeCoordinates[0] * gamma);
+								tempPointNormal[1] = (v1->NormalEyeCoordinates[1] * alpha) + (v2->NormalEyeCoordinates[1] * beta) + (v3->NormalEyeCoordinates[1] * gamma);
+								tempPointNormal[2] = (v1->NormalEyeCoordinates[2] * alpha) + (v2->NormalEyeCoordinates[2] * beta) + (v3->NormalEyeCoordinates[2] * gamma);
+								light=LightingEquation(tempPoint, tempPointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
 								if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) {
 									t=((v1->TextureCoordinates[0] * alpha)+ (v2->TextureCoordinates[0] * beta)+ (v3->TextureCoordinates[0] * gamma))* TEXTURE_SIZE;
 									s=( (v1->TextureCoordinates[1] * alpha)+ (v2->TextureCoordinates[1] * beta)+ (v3->TextureCoordinates[1] * gamma))* TEXTURE_SIZE;
@@ -428,7 +428,6 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 										setPixel(i, j, light*(TextureImage[s][t][0]/255.0), light * (TextureImage[s][t][1]/255.0), light * (TextureImage[s][t][2]/255.0));
 									else {
 									}
-	
 								}
 								else setPixel(i, j, light, light, light);
 							}
