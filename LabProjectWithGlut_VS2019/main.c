@@ -20,11 +20,13 @@
 // Grphics Pipeline section
 //////////////////////////////////////////////////////////////////////
 #define WIN_SIZE 500
+#define TEXTURE_SIZE 512
 #define CAMERA_DISTANCE_FROM_AXIS_CENTER 10
 
 typedef struct{
 	GLfloat point3D[4];
 	GLfloat normal[4];
+	GLfloat TextureCoordinates[2];
 	GLfloat point3DeyeCoordinates[4];
 	GLfloat NormalEyeCoordinates[4];
 	GLfloat pointScreen[4];
@@ -32,7 +34,7 @@ typedef struct{
 } Vertex;
 
 enum ProjectionTypeEnum{ ORTHOGRAPHIC = 1, PERSPECTIVE };
-enum DisplayTypeEnum{ FACE_VERTEXES = 11, FACE_COLOR, LIGHTING_FLAT, LIGHTING_GOURARD, LIGHTING_PHONG };
+enum DisplayTypeEnum{ FACE_VERTEXES = 11, FACE_COLOR, LIGHTING_FLAT, LIGHTING_GOURARD, LIGHTING_PHONG, TEXTURE, TEXTURE_LIGHTING_PHONG};
 enum DisplayNormalEnum{ DISPLAY_NORMAL_YES = 21, DISPLAY_NORMAL_NO };
 
 typedef struct{
@@ -95,18 +97,33 @@ void GraphicsPipeline()
 			v1.point3D[3] = 1;
 			MatrixCopy(v1.normal, &model_ptr->normals[3 * triangle->nindices[0]], 3);
 			v1.normal[3] = 1;
+			if (model_ptr->numtexcoords != 0)
+				MatrixCopy(v1.TextureCoordinates, &model_ptr->texcoords[2 * triangle->tindices[0]], 2);
+			else {
+				v1.TextureCoordinates[0] = -1; v1.TextureCoordinates[1] = -1; v1.TextureCoordinates[2] = -1;
+			}
 			VertexProcessing(&v1);
 
 			MatrixCopy(v2.point3D, &model_ptr->vertices[3 * triangle->vindices[1]], 3);
 			v2.point3D[3] = 1;
 			MatrixCopy(v2.normal, &model_ptr->normals[3 * triangle->nindices[1]], 3);
 			v2.normal[3] = 1;
+			if (model_ptr->numtexcoords != 0)
+				MatrixCopy(v2.TextureCoordinates, &model_ptr->texcoords[2 * triangle->tindices[1]], 2);
+			else {
+				v2.TextureCoordinates[0] = -1; v2.TextureCoordinates[1] = -1; v2.TextureCoordinates[2] = -1;
+			}
 			VertexProcessing(&v2);
 
 			MatrixCopy(v3.point3D, &model_ptr->vertices[3 * triangle->vindices[2]], 3);
 			v3.point3D[3] = 1;
 			MatrixCopy(v3.normal, &model_ptr->normals[3 * triangle->nindices[2]], 3);
 			v3.normal[3] = 1;
+			if (model_ptr->numtexcoords != 0)
+				MatrixCopy(v3.TextureCoordinates, &model_ptr->texcoords[2 * triangle->tindices[2]], 2);
+			else {
+				v3.TextureCoordinates[0] = -1; v3.TextureCoordinates[1] = -1; v3.TextureCoordinates[2] = -1;
+			}
 			VertexProcessing(&v3);
 
 			FaceColor[0] = (GLfloat)rand() / ((GLfloat)RAND_MAX + 1);
@@ -121,6 +138,7 @@ void GraphicsPipeline()
 }
 
 GLfloat Zbuffer[WIN_SIZE][WIN_SIZE];
+GLubyte  TextureImage[TEXTURE_SIZE][TEXTURE_SIZE][3];
 GLfloat Mmodeling[16];
 GLfloat Mlookat[16];
 GLfloat Mprojection[16];
@@ -525,8 +543,9 @@ void LoadModelFile();
 void DisplayColorBuffer();
 void drawstr(char* FontName, int FontSize, GLuint x, GLuint y, char* format, ...);
 void TerminationErrorFunc(char *ErrorString);
+GLubyte* readBMP(char* imagepath, int* width, int* height);
 
-enum FileNumberEnum{ TEAPOT = 100, TEDDY, PUMPKIN, COW, SIMPLE_PYRAMID, FIRST_EXAMPLE, SIMPLE_3D_EXAMPLE, SPHERE, TRIANGLE, Z_BUFFER_EXAMPLE };
+enum FileNumberEnum{ TEAPOT = 100, TEDDY, PUMPKIN, COW, SIMPLE_PYRAMID, FIRST_EXAMPLE, SIMPLE_3D_EXAMPLE, SPHERE, TRIANGLE, Z_BUFFER_EXAMPLE, TEXTURE_BOX, TEXTURE_TRIANGLE, TEXTURE_BARREL, TEXTURE_SHEEP};
 
 typedef struct{
 	enum FileNumberEnum FileNum;
@@ -566,33 +585,39 @@ int main(int argc, char** argv)
 
 	//registering and creating menu
 	submenu1_id = glutCreateMenu(menuCB);
-		glutAddMenuEntry("open teapot.obj", TEAPOT);
-		glutAddMenuEntry("open teddy.obj", TEDDY);
-		glutAddMenuEntry("open pumpkin.obj", PUMPKIN);
-		glutAddMenuEntry("open cow.obj", COW);
-		glutAddMenuEntry("open Simple3Dexample.obj", SIMPLE_3D_EXAMPLE);
-		glutAddMenuEntry("open SimplePyramid.obj", SIMPLE_PYRAMID);
-		glutAddMenuEntry("open sphere.obj", SPHERE);
-		glutAddMenuEntry("open triangle.obj", TRIANGLE);
-		glutAddMenuEntry("open FirstExample.obj", FIRST_EXAMPLE);
-		glutAddMenuEntry("open ZbufferExample.obj", Z_BUFFER_EXAMPLE);
-		submenu2_id = glutCreateMenu(menuCB);
-		glutAddMenuEntry("Orthographic", ORTHOGRAPHIC);
-		glutAddMenuEntry("Perspective",  PERSPECTIVE);
+	glutAddMenuEntry("open teapot.obj", TEAPOT);
+	glutAddMenuEntry("open teddy.obj", TEDDY);
+	glutAddMenuEntry("open pumpkin.obj", PUMPKIN);
+	glutAddMenuEntry("open cow.obj", COW);
+	glutAddMenuEntry("open Simple3Dexample.obj", SIMPLE_3D_EXAMPLE);
+	glutAddMenuEntry("open SimplePyramid.obj", SIMPLE_PYRAMID);
+	glutAddMenuEntry("open sphere.obj", SPHERE);
+	glutAddMenuEntry("open triangle.obj", TRIANGLE);
+	glutAddMenuEntry("open FirstExample.obj", FIRST_EXAMPLE);
+	glutAddMenuEntry("open ZbufferExample.obj", Z_BUFFER_EXAMPLE);
+	glutAddMenuEntry("open TriangleTexture.obj", TEXTURE_TRIANGLE);
+	glutAddMenuEntry("open box.obj", TEXTURE_BOX);
+	glutAddMenuEntry("open barrel.obj", TEXTURE_BARREL);
+	glutAddMenuEntry("open sheep.obj", TEXTURE_SHEEP);
+	submenu2_id = glutCreateMenu(menuCB);
+	glutAddMenuEntry("Orthographic", ORTHOGRAPHIC);
+	glutAddMenuEntry("Perspective", PERSPECTIVE);
 	submenu3_id = glutCreateMenu(menuCB);
-		glutAddMenuEntry("Face Vertexes", FACE_VERTEXES);
-		glutAddMenuEntry("Face Color", FACE_COLOR);
-		glutAddMenuEntry("Lighting Flat", LIGHTING_FLAT);
-		glutAddMenuEntry("Lighting Gourard", LIGHTING_GOURARD);
-		glutAddMenuEntry("Lighting Phong", LIGHTING_PHONG);
+	glutAddMenuEntry("Face Vertexes", FACE_VERTEXES);
+	glutAddMenuEntry("Face Color", FACE_COLOR);
+	glutAddMenuEntry("Lighting Flat", LIGHTING_FLAT);
+	glutAddMenuEntry("Lighting Gourard", LIGHTING_GOURARD);
+	glutAddMenuEntry("Lighting Phong", LIGHTING_PHONG);
+	glutAddMenuEntry("Texture", TEXTURE);
+	glutAddMenuEntry("Texture lighting Phong", TEXTURE_LIGHTING_PHONG);
 	submenu4_id = glutCreateMenu(menuCB);
-		glutAddMenuEntry("Yes", DISPLAY_NORMAL_YES);
-		glutAddMenuEntry("No", DISPLAY_NORMAL_NO);
+	glutAddMenuEntry("Yes", DISPLAY_NORMAL_YES);
+	glutAddMenuEntry("No", DISPLAY_NORMAL_NO);
 	glutCreateMenu(menuCB);
-		glutAddSubMenu("Open Model File", submenu1_id);
-		glutAddSubMenu("Projection Type", submenu2_id);
-		glutAddSubMenu("Display type",    submenu3_id);
-		glutAddSubMenu("Display Normals", submenu4_id);
+	glutAddSubMenu("Open Model File", submenu1_id);
+	glutAddSubMenu("Projection Type", submenu2_id);
+	glutAddSubMenu("Display type", submenu3_id);
+	glutAddSubMenu("Display Normals", submenu4_id);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	LoadModelFile();
@@ -634,12 +659,15 @@ void drawingCB(void)
 
 void LoadModelFile()
 {
-	if (model_ptr){
+	int width, height;
+	GLubyte* ImageData;
+
+	if (model_ptr) {
 		glmDelete(model_ptr);
 		model_ptr = 0;
 	}
 
-	switch (GlobalGuiCalculations.FileNum){
+	switch (GlobalGuiCalculations.FileNum) {
 	case TEAPOT:
 		model_ptr = glmReadOBJ("teapot.obj");
 		break;
@@ -670,6 +698,38 @@ void LoadModelFile()
 	case Z_BUFFER_EXAMPLE:
 		model_ptr = glmReadOBJ("ZbufferExample.obj");
 		break;
+	case TEXTURE_TRIANGLE:
+		model_ptr = glmReadOBJ("TriangleTexture.obj");
+		ImageData = readBMP("TriangleTexture.bmp", &width, &height);
+		if (width != TEXTURE_SIZE || height != TEXTURE_SIZE)
+			TerminationErrorFunc("Invalid texture size");
+		memcpy(TextureImage, ImageData, TEXTURE_SIZE * TEXTURE_SIZE * 3);
+		free(ImageData);
+		break;
+	case TEXTURE_BOX:
+		model_ptr = glmReadOBJ("box.obj");
+		ImageData = readBMP("box.bmp", &width, &height);
+		if (width != TEXTURE_SIZE || height != TEXTURE_SIZE)
+			TerminationErrorFunc("Invalid texture size");
+		memcpy(TextureImage, ImageData, TEXTURE_SIZE * TEXTURE_SIZE * 3);
+		free(ImageData);
+		break;
+	case TEXTURE_BARREL:
+		model_ptr = glmReadOBJ("barrel.obj");
+		ImageData = readBMP("barrel.bmp", &width, &height);
+		if (width != TEXTURE_SIZE || height != TEXTURE_SIZE)
+			TerminationErrorFunc("Invalid texture size");
+		memcpy(TextureImage, ImageData, TEXTURE_SIZE * TEXTURE_SIZE * 3);
+		free(ImageData);
+		break;
+	case TEXTURE_SHEEP:
+		model_ptr = glmReadOBJ("sheep.obj");
+		ImageData = readBMP("sheep.bmp", &width, &height);
+		if (width != TEXTURE_SIZE || height != TEXTURE_SIZE)
+			TerminationErrorFunc("Invalid texture size");
+		memcpy(TextureImage, ImageData, TEXTURE_SIZE * TEXTURE_SIZE * 3);
+		free(ImageData);
+		break;
 	default:
 		TerminationErrorFunc("File number not valid");
 		break;
@@ -698,8 +758,8 @@ void ClearZBuffer()
 void ClearColorBuffer()
 {
 	GLuint x, y;
-	for (y = 0; y <WIN_SIZE; y++){
-		for (x = 0; x < WIN_SIZE; x++){
+	for (y = 0; y < WIN_SIZE; y++) {
+		for (x = 0; x < WIN_SIZE; x++) {
 			ColorBuffer[y][x][0] = 0;
 			ColorBuffer[y][x][1] = 0;
 			ColorBuffer[y][x][2] = 0;
@@ -709,7 +769,7 @@ void ClearColorBuffer()
 
 void setPixel(GLint x, GLint y, GLfloat r, GLfloat g, GLfloat b)
 {
-	if (x >= 0 && x < WIN_SIZE && y >= 0 && y < WIN_SIZE){
+	if (x >= 0 && x < WIN_SIZE && y >= 0 && y < WIN_SIZE) {
 		ColorBuffer[y][x][0] = round(r * 255);
 		ColorBuffer[y][x][1] = round(g * 255);
 		ColorBuffer[y][x][2] = round(b * 255);
@@ -720,12 +780,12 @@ void DisplayColorBuffer()
 {
 	GLuint x, y;
 	glBegin(GL_POINTS);
-	for (y = 0; y < WIN_SIZE; y++){
-		for (x = 0; x <WIN_SIZE; x++){
+	for (y = 0; y < WIN_SIZE; y++) {
+		for (x = 0; x < WIN_SIZE; x++) {
 			glColor3ub(min(255, ColorBuffer[y][x][0]), min(255, ColorBuffer[y][x][1]), min(255, ColorBuffer[y][x][2]));
-				glVertex2f(x + 0.5, y + 0.5);   // The 0.5 is to target pixel
-			}
+			glVertex2f(x + 0.5, y + 0.5);   // The 0.5 is to target pixel
 		}
+	}
 	glEnd();
 }
 
@@ -749,9 +809,9 @@ void InitGuiGlobalParams()
 	GlobalGuiParamsForYou.DisplayType = FACE_VERTEXES;
 	GlobalGuiParamsForYou.ProjectionType = ORTHOGRAPHIC;
 	GlobalGuiParamsForYou.DisplayNormals = DISPLAY_NORMAL_NO;
-	GlobalGuiParamsForYou.Lighting_Diffuse   = 0.75;
-	GlobalGuiParamsForYou.Lighting_Specular  = 0.2;
-	GlobalGuiParamsForYou.Lighting_Ambient   = 0.2;
+	GlobalGuiParamsForYou.Lighting_Diffuse = 0.75;
+	GlobalGuiParamsForYou.Lighting_Specular = 0.2;
+	GlobalGuiParamsForYou.Lighting_Ambient = 0.2;
 	GlobalGuiParamsForYou.Lighting_sHininess = 40;
 	GlobalGuiParamsForYou.LightPosition[0] = 10;
 	GlobalGuiParamsForYou.LightPosition[1] = 5;
@@ -779,7 +839,7 @@ void reshapeCB(int width, int height)
 }
 
 
-void keyboardCB(unsigned char key, int x, int y){
+void keyboardCB(unsigned char key, int x, int y) {
 	switch (key) {
 	case 27:
 		exit(0);
@@ -869,8 +929,8 @@ void MouseClickCB(int button, int state, int x, int y)
 
 void MouseMotionCB(int x, int y)
 {
-	GlobalGuiCalculations.CameraAnleHorizontal += (x - GlobalGuiCalculations.MouseLastPos[0])/40;
-	GlobalGuiCalculations.CameraAnleVertical   -= (y - GlobalGuiCalculations.MouseLastPos[1])/40;
+	GlobalGuiCalculations.CameraAnleHorizontal += (x - GlobalGuiCalculations.MouseLastPos[0]) / 40;
+	GlobalGuiCalculations.CameraAnleVertical -= (y - GlobalGuiCalculations.MouseLastPos[1]) / 40;
 
 	if (GlobalGuiCalculations.CameraAnleVertical > 30)
 		GlobalGuiCalculations.CameraAnleVertical = 30;
@@ -878,17 +938,17 @@ void MouseMotionCB(int x, int y)
 		GlobalGuiCalculations.CameraAnleVertical = -30;
 
 	GlobalGuiCalculations.CameraAnleHorizontal = (GlobalGuiCalculations.CameraAnleHorizontal + 360) % 360;
-//	GlobalGuiCalculations.CameraAnleVertical   = (GlobalGuiCalculations.CameraAnleVertical   + 360) % 360;
+	//	GlobalGuiCalculations.CameraAnleVertical   = (GlobalGuiCalculations.CameraAnleVertical   + 360) % 360;
 
-	GlobalGuiParamsForYou.CameraPos[0] = GlobalGuiCalculations.CameraRaduis * sin((float)(GlobalGuiCalculations.CameraAnleVertical+90)*M_PI / 180) * cos((float)(GlobalGuiCalculations.CameraAnleHorizontal+90)*M_PI / 180);
-	GlobalGuiParamsForYou.CameraPos[2] = GlobalGuiCalculations.CameraRaduis * sin((float)(GlobalGuiCalculations.CameraAnleVertical+90)*M_PI / 180) * sin((float)(GlobalGuiCalculations.CameraAnleHorizontal+90)*M_PI / 180);
-	GlobalGuiParamsForYou.CameraPos[1] = GlobalGuiCalculations.CameraRaduis * cos((float)(GlobalGuiCalculations.CameraAnleVertical+90)*M_PI / 180);
+	GlobalGuiParamsForYou.CameraPos[0] = GlobalGuiCalculations.CameraRaduis * sin((float)(GlobalGuiCalculations.CameraAnleVertical + 90) * M_PI / 180) * cos((float)(GlobalGuiCalculations.CameraAnleHorizontal + 90) * M_PI / 180);
+	GlobalGuiParamsForYou.CameraPos[2] = GlobalGuiCalculations.CameraRaduis * sin((float)(GlobalGuiCalculations.CameraAnleVertical + 90) * M_PI / 180) * sin((float)(GlobalGuiCalculations.CameraAnleHorizontal + 90) * M_PI / 180);
+	GlobalGuiParamsForYou.CameraPos[1] = GlobalGuiCalculations.CameraRaduis * cos((float)(GlobalGuiCalculations.CameraAnleVertical + 90) * M_PI / 180);
 	glutPostRedisplay();
 }
 
 void menuCB(int value)
 {
-	switch (value){
+	switch (value) {
 	case ORTHOGRAPHIC:
 	case PERSPECTIVE:
 		GlobalGuiParamsForYou.ProjectionType = value;
@@ -899,6 +959,14 @@ void menuCB(int value)
 	case LIGHTING_FLAT:
 	case LIGHTING_GOURARD:
 	case LIGHTING_PHONG:
+		GlobalGuiParamsForYou.DisplayType = value;
+		glutPostRedisplay();
+		break;
+	case TEXTURE:
+		GlobalGuiParamsForYou.DisplayType = value;
+		glutPostRedisplay();
+		break;
+	case TEXTURE_LIGHTING_PHONG:
 		GlobalGuiParamsForYou.DisplayType = value;
 		glutPostRedisplay();
 		break;
@@ -919,9 +987,9 @@ void menuCB(int value)
 void drawstr(char* FontName, int FontSize, GLuint x, GLuint y, char* format, ...)
 {
 	va_list args;
-	char buffer[255], *s;
+	char buffer[255], * s;
 
-	GLvoid *font_style = GLUT_BITMAP_TIMES_ROMAN_10;
+	GLvoid* font_style = GLUT_BITMAP_TIMES_ROMAN_10;
 
 	font_style = GLUT_BITMAP_HELVETICA_10;
 	if (strcmp(FontName, "helvetica") == 0) {
@@ -952,7 +1020,7 @@ void drawstr(char* FontName, int FontSize, GLuint x, GLuint y, char* format, ...
 }
 
 
-void TerminationErrorFunc(char *ErrorString)
+void TerminationErrorFunc(char* ErrorString)
 {
 	char string[256];
 	printf(ErrorString);
@@ -961,3 +1029,62 @@ void TerminationErrorFunc(char *ErrorString)
 	exit(0);
 }
 
+
+// Function to load bmp file
+// buffer for the image is allocated in this function, you should free this buffer
+GLubyte* readBMP(char* imagepath, int* width, int* height)
+{
+	unsigned char header[54]; // Each BMP file begins by a 54-bytes header
+	unsigned int dataPos;     // Position in the file where the actual data begins
+	unsigned int imageSize;   // = width*height*3
+	unsigned char* data;
+	unsigned char tmp;
+	int i;
+
+	// Open the file
+	FILE* file = fopen(imagepath, "rb");
+	if (!file) {
+		TerminationErrorFunc("Image could not be opened\n");
+	}
+
+	if (fread(header, 1, 54, file) != 54) { // If not 54 bytes read : problem
+		TerminationErrorFunc("Not a correct BMP file\n");
+	}
+
+	if (header[0] != 'B' || header[1] != 'M') {
+		TerminationErrorFunc("Not a correct BMP file\n");
+	}
+
+	// Read ints from the byte array
+	dataPos = *(int*)&(header[0x0A]);
+	imageSize = *(int*)&(header[0x22]);
+	*width = *(int*)&(header[0x12]);
+	*height = *(int*)&(header[0x16]);
+
+	// Some BMP files are misformatted, guess missing information
+	if (imageSize == 0)
+		imageSize = *width * *height * 3; // 3 : one byte for each Red, Green and Blue component
+	if (dataPos == 0)
+		dataPos = 54; // The BMP header is done that way
+
+	// Create a buffer
+	data = malloc(imageSize * sizeof(GLubyte));
+
+	// Read the actual data from the file into the buffer
+	fread(data, 1, imageSize, file);
+
+
+	//swap the r and b values to get RGB (bitmap is BGR)
+	for (i = 0; i < *width * *height; i++)
+	{
+		tmp = data[i * 3];
+		data[i * 3] = data[i * 3 + 2];
+		data[i * 3 + 2] = tmp;
+	}
+
+
+	//Everything is in memory now, the file can be closed
+	fclose(file);
+
+	return data;
+}
