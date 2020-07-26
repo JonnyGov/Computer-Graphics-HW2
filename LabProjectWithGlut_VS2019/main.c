@@ -396,6 +396,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	for (i = rectangle[0]; i <= rectangle[1]; i++)
 		for (j = rectangle[2]; j <= rectangle[3]; j++)
 		{ // go for each pixel in the rectangle:
+			if (i<=0 || i>= WIN_SIZE || j<= 0 || j>=WIN_SIZE) break;
 			alpha = distanceFromLinear(linear1, i, j) / distance1;
 			if (alpha >= 0 && alpha <= 1) { // test alpha in triangle
 				beta = distanceFromLinear(linear2, i, j) / distance2;
