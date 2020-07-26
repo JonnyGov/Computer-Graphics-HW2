@@ -378,7 +378,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	GLfloat P1x = v1->pointScreen[0], P1y = v1->pointScreen[1], P2x = v2->pointScreen[0], P2y = v2->pointScreen[1], P3x = v3->pointScreen[0], P3y = v3->pointScreen[1];
 	GLfloat alpha, beta, gamma, distance1, distance2, distance3;
 	GLfloat linear1[3], linear2[3], linear3[3]; // 3 linear equation for each line.
-	GLfloat tempPoint[3],tempPointNormal[3];
+	GLfloat tempPoint[3], tempPointNormal[3];
 	GLfloat  light;
 	int s, t;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
@@ -396,7 +396,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	for (i = rectangle[0]; i <= rectangle[1]; i++)
 		for (j = rectangle[2]; j <= rectangle[3]; j++)
 		{ // go for each pixel in the rectangle:
-			if (i<=0 || i>= WIN_SIZE || j<= 0 || j>=WIN_SIZE) break; // don't draw pixel out of the window.
+			if (i <= 0 || i >= WIN_SIZE || j <= 0 || j >= WIN_SIZE) break; // don't draw pixel out of the window.
 			alpha = distanceFromLinear(linear1, i, j) / distance1;
 			if (alpha >= 0 && alpha <= 1) { // test alpha in triangle
 				beta = distanceFromLinear(linear2, i, j) / distance2;
@@ -413,42 +413,27 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
 								setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG || GlobalGuiParamsForYou.DisplayType ==TEXTURE_LIGHTING_PHONG) { // PHONG LIGHTING 
-								
-								tempPoint[0] = (v1->point3DeyeCoordinates[0] * alpha)+ (v2->point3DeyeCoordinates[0] * beta)+ (v3->point3DeyeCoordinates[0] * gamma);
-								tempPoint[1] = (v1->point3DeyeCoordinates[1] * alpha)+ (v2->point3DeyeCoordinates[1] * beta)+ (v3->point3DeyeCoordinates[1] * gamma);
-								tempPoint[2] = (v1->point3DeyeCoordinates[2] * alpha)+ (v2->point3DeyeCoordinates[2] * beta)+ (v3->point3DeyeCoordinates[2] * gamma);
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) { // PHONG LIGHTING 
+
+								tempPoint[0] = (v1->point3DeyeCoordinates[0] * alpha) + (v2->point3DeyeCoordinates[0] * beta) + (v3->point3DeyeCoordinates[0] * gamma);
+								tempPoint[1] = (v1->point3DeyeCoordinates[1] * alpha) + (v2->point3DeyeCoordinates[1] * beta) + (v3->point3DeyeCoordinates[1] * gamma);
+								tempPoint[2] = (v1->point3DeyeCoordinates[2] * alpha) + (v2->point3DeyeCoordinates[2] * beta) + (v3->point3DeyeCoordinates[2] * gamma);
 								tempPointNormal[0] = (v1->NormalEyeCoordinates[0] * alpha) + (v2->NormalEyeCoordinates[0] * beta) + (v3->NormalEyeCoordinates[0] * gamma);
 								tempPointNormal[1] = (v1->NormalEyeCoordinates[1] * alpha) + (v2->NormalEyeCoordinates[1] * beta) + (v3->NormalEyeCoordinates[1] * gamma);
 								tempPointNormal[2] = (v1->NormalEyeCoordinates[2] * alpha) + (v2->NormalEyeCoordinates[2] * beta) + (v3->NormalEyeCoordinates[2] * gamma);
-								light=LightingEquation(tempPoint, tempPointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
-								if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) {
-									t=((v1->TextureCoordinates[0] * alpha)+ (v2->TextureCoordinates[0] * beta)+ (v3->TextureCoordinates[0] * gamma))* TEXTURE_SIZE;
-									s=( (v1->TextureCoordinates[1] * alpha)+ (v2->TextureCoordinates[1] * beta)+ (v3->TextureCoordinates[1] * gamma))* TEXTURE_SIZE;
-									if (model_ptr->numtexcoords != 0)
-										setPixel(i, j, light*(TextureImage[s][t][0]/255.0), light * (TextureImage[s][t][1]/255.0), light * (TextureImage[s][t][2]/255.0));
-									else {
-									}
-								}
-								else setPixel(i, j, light, light, light);
+								light = LightingEquation(tempPoint, tempPointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
+								setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)  
+							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)
 								setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
-							else if (GlobalGuiParamsForYou.DisplayType == TEXTURE ) {
-								t = ((v1->TextureCoordinates[0] * alpha) + (v2->TextureCoordinates[0] * beta) + (v3->TextureCoordinates[0] * gamma)) * TEXTURE_SIZE;
-								s = ((v1->TextureCoordinates[1] * alpha) + (v2->TextureCoordinates[1] * beta) + (v3->TextureCoordinates[1] * gamma)) * TEXTURE_SIZE;
-								if (model_ptr->numtexcoords != 0)
-									setPixel(i, j, (TextureImage[s][t][0] / 255.0), (TextureImage[s][t][1] / 255.0),(TextureImage[s][t][2] / 255.0));
-								else {
-								}
-							}
 						}
 					}
-
 				}
+
 			}
 		}
 }
+
 void DrawLineDDA(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2,GLfloat r, GLfloat g, GLfloat b)
 {
 	float dx, dy, x, y, a, x1_, y1_, x2_, y2_;
