@@ -415,7 +415,7 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								light = (v1->PixelValue * alpha) + (v2->PixelValue * beta) + (v3->PixelValue * gamma);
 								setPixel(i, j, light, light, light);
 							}
-							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG) { // PHONG LIGHTING 
+							else if (GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG|| GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) { // PHONG LIGHTING 
 
 								tempPoint[0] = (v1->point3DeyeCoordinates[0] * alpha) + (v2->point3DeyeCoordinates[0] * beta) + (v3->point3DeyeCoordinates[0] * gamma);
 								tempPoint[1] = (v1->point3DeyeCoordinates[1] * alpha) + (v2->point3DeyeCoordinates[1] * beta) + (v3->point3DeyeCoordinates[1] * gamma);
@@ -424,7 +424,18 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								tempPointNormal[1] = (v1->NormalEyeCoordinates[1] * alpha) + (v2->NormalEyeCoordinates[1] * beta) + (v3->NormalEyeCoordinates[1] * gamma);
 								tempPointNormal[2] = (v1->NormalEyeCoordinates[2] * alpha) + (v2->NormalEyeCoordinates[2] * beta) + (v3->NormalEyeCoordinates[2] * gamma);
 								light = LightingEquation(tempPoint, tempPointNormal, GlobalGuiParamsForYou.LightPosition, GlobalGuiParamsForYou.Lighting_Diffuse, GlobalGuiParamsForYou.Lighting_Specular, GlobalGuiParamsForYou.Lighting_Ambient, GlobalGuiParamsForYou.Lighting_sHininess);
-								setPixel(i, j, light, light, light);
+								if(GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG){ 
+									setPixel(i, j, light, light, light); 
+								}
+								else if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) {
+
+									red = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][0];
+									green = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][1];
+									blue = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][2];
+
+									setPixel(i, j, light* red / 255.0, light * green / 255.0, light * blue / 255.0);
+								}
+								
 							}
 							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)
 								setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
