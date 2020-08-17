@@ -381,10 +381,11 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 	GLfloat tempPoint[3], tempPointNormal[3];
 	GLfloat  light;
 	GLfloat  red,green,blue;
-
 	int s, t;
 	GLfloat zAtributes[3] = { v1->pointScreen[2], v2->pointScreen[2], v3->pointScreen[2] };
 	int i, j, rectangle[4];
+	int indexRow, indexCul;
+
 	rectanglePoints(v1->pointScreen, v2->pointScreen, v3->pointScreen, rectangle); // rectangle= Area to test.
 	linearEquation(P2x, P2y, P3x, P3y, linear1); // p2 and p3
 	distance1 = distanceFromLinear(linear1, P1x, P1y); // distance to p1
@@ -429,9 +430,11 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								}
 								else if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) {
 
-									red = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][0];
-									green = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][1];
-									blue = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][2];
+									indexCul = (int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE);
+									indexRow = (int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE);
+									red = TextureImage[indexRow][indexCul][0];
+									green = TextureImage[indexRow][indexCul][1];
+									blue = TextureImage[indexRow][indexCul][2];
 
 									setPixel(i, j, light* red / 255.0, light * green / 255.0, light * blue / 255.0);
 								}
@@ -440,11 +443,11 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)
 								setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
 							else if (GlobalGuiParamsForYou.DisplayType == TEXTURE) {
-
-								red = TextureImage[(int)((v1->TextureCoordinates[0]*alpha + v2->TextureCoordinates[0]*beta +v3->TextureCoordinates[0]*gamma)* TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][0];
-								green = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][1];
-								blue = TextureImage[(int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE)][(int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE)][2];
-								
+								indexCul = (int)((v1->TextureCoordinates[0]*alpha + v2->TextureCoordinates[0]*beta + v3->TextureCoordinates[0]*gamma) * TEXTURE_SIZE);
+								indexRow = (int)((v1->TextureCoordinates[1]*alpha + v2->TextureCoordinates[1]*beta + v3->TextureCoordinates[1]*gamma) * TEXTURE_SIZE);
+								red = TextureImage[indexRow][indexCul][0];
+								green = TextureImage[indexRow][indexCul][1];
+								blue = TextureImage[indexRow][indexCul][2];
 								setPixel(i, j, red / 255.0, green / 255.0, blue / 255.0);
 							}
 						}
