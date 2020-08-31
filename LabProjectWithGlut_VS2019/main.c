@@ -443,7 +443,8 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 							}
 							else if (GlobalGuiParamsForYou.DisplayType == FACE_COLOR)
 								setPixel(i, j, faceColor[0], faceColor[1], faceColor[2]); // paint pixel (color test)
-							else if (GlobalGuiParamsForYou.DisplayType == TEXTURE) {
+							else if (GlobalGuiParamsForYou.DisplayType == TEXTURE &&
+								model_ptr->numtexcoords != 0) {
 								indexCul = (int)((v1->TextureCoordinates[0]*alpha + v2->TextureCoordinates[0]*beta + v3->TextureCoordinates[0]*gamma) * TEXTURE_SIZE);
 								indexRow = (int)((v1->TextureCoordinates[1]*alpha + v2->TextureCoordinates[1]*beta + v3->TextureCoordinates[1]*gamma) * TEXTURE_SIZE);
 								red = TextureImage[indexRow][indexCul][0];
