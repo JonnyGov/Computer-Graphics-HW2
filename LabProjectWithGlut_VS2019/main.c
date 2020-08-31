@@ -428,7 +428,8 @@ void barycentricCoordinatesDrawPixel(Vertex* v1, Vertex* v2, Vertex* v3, GLfloat
 								if(GlobalGuiParamsForYou.DisplayType == LIGHTING_PHONG){ 
 									setPixel(i, j, light, light, light); 
 								}
-								else if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG) {
+								else if (GlobalGuiParamsForYou.DisplayType == TEXTURE_LIGHTING_PHONG &&
+									model_ptr->numtexcoords != 0) { /* testing if  textures were loded for the modle*/
 
 									indexCul = (int)((v1->TextureCoordinates[0] * alpha + v2->TextureCoordinates[0] * beta + v3->TextureCoordinates[0] * gamma) * TEXTURE_SIZE);
 									indexRow = (int)((v1->TextureCoordinates[1] * alpha + v2->TextureCoordinates[1] * beta + v3->TextureCoordinates[1] * gamma) * TEXTURE_SIZE);
